@@ -136,7 +136,6 @@ export default class DashboardComponent implements OnInit {
     
   }
 
-
   salvarVendaComDivisao() {
     if (!this.vendaSelecionada) return;
   
@@ -145,20 +144,22 @@ export default class DashboardComponent implements OnInit {
     if (this.divisoesPagamento.length > 1) {
       // Se for venda dividida
       this.divisoesPagamento.forEach(div => {
-        const isCartao = div.tipoPagamento === 'CARTAO';
+        const card_type = div.tipoPagamento === 'CARTAO' && div.operacao && div.operacao.trim() !== '' 
+          ? div.operacao 
+          : 'NA';
   
         const subvenda = {
           id_mesa: this.vendaSelecionada.id_mesa,
           numero_mesa: this.vendaSelecionada.numero_mesa,
           total: div.valor,
-          nota: div.nota || '000', // Evita erro no banco
+          nota: div.nota || '000',
           status_venda: 'FINALIZADA',
           tipo_pagamento: div.tipoPagamento,
           movimento: this.vendaSelecionada.movimento,
-          card_type: isCartao ? div.operacao || 'NA' : 'NA',
+          card_type: card_type,
           data_venda: dataFormatada,
           hora_venda: this.vendaSelecionada.hora_venda,
-          id_caixa: this.caixa?.id_caixa || null // Protege contra undefined
+          id_caixa: this.caixa?.id_caixa || null
         };
   
         console.log('Subvenda que vai ser enviada:', subvenda);
@@ -169,7 +170,7 @@ export default class DashboardComponent implements OnInit {
         });
       });
   
-      // Atualiza a venda original como "DIVIDIDA"
+      // Atualiza a venda original como "CANCELADA"
       const vendaDividida = {
         ...this.vendaSelecionada,
         status_venda: 'CANCELADA',
@@ -185,12 +186,17 @@ export default class DashboardComponent implements OnInit {
       });
   
     } else {
-      // Se for apenas uma forma de pagamento
+      // Apenas uma forma de pagamento
+      const unica = this.divisoesPagamento[0];
+      const card_type = unica.tipoPagamento === 'CARTAO' && unica.operacao && unica.operacao.trim() !== '' 
+        ? unica.operacao 
+        : 'NA';
+  
       const vendaFinal = {
         ...this.vendaSelecionada,
         status_venda: 'FINALIZADA',
-        tipo_pagamento: this.divisoesPagamento[0].tipoPagamento, // Aqui estamos garantindo que o tipo de pagamento da única divisão seja salvo
-        card_type: this.divisoesPagamento[0].operacao, // Aqui estamos garantindo que o tipo de pagamento da única divisão seja salvo
+        tipo_pagamento: unica.tipoPagamento,
+        card_type: card_type,
         data_venda: dataFormatada
       };
   
@@ -202,12 +208,12 @@ export default class DashboardComponent implements OnInit {
         error: (err) => console.error('Erro ao atualizar venda:', err)
       });
     }
-
-    
+  
     setTimeout(() => {
       window.location.reload();
     }, 800);
   }
+  
   
   
 
