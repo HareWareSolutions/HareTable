@@ -157,7 +157,7 @@
 
         <div class="card" *ngFor="let divisao of divisoesPagamento; let i = index">
           <div class="card-body row my-3">
-            <h5 class="card-title">Divisão {{ i + 1 }}</h5>
+            <h5 class="card-title">Forma de pagamento {{ i + 1 }}</h5>
         
             <div class="col-md-2">
               <strong>Valor:</strong>
@@ -190,11 +190,7 @@
         </div>
         
 
-        <p class="text-end">
-          Total dividido: R$ {{ totalDividido.toFixed(2) }} / R$ {{ vendaSelecionada.total }} 
-          <span *ngIf="totalConfere" class="text-success">✅</span>
-          <span *ngIf="!totalConfere" class="text-danger">❌</span>
-        </p>
+    
 
         <div class="text-end my-2">
           <button class="btn btn-success" (click)="adicionarDivisao()">+ Adicionar Ajuste</button>
@@ -203,6 +199,11 @@
       </div>
 
       <div class="modal-footer">
+        <p class="text-end">
+          Total dividido: R$ {{ totalDividido.toFixed(2) }} / R$ {{ vendaSelecionada.total }} 
+          <span *ngIf="totalConfere" class="text-success">✅</span>
+          <span *ngIf="!totalConfere" class="text-danger">❌</span>
+        </p>
         <button type="button" class="btn btn-primary" (click)="salvarVendaComDivisao()">Salvar</button>
         <button type="button" class="btn btn-secondary" (click)="fecharModalVendas()">Fechar</button>
       </div>

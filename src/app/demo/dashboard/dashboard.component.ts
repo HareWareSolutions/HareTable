@@ -190,6 +190,7 @@ export default class DashboardComponent implements OnInit {
         ...this.vendaSelecionada,
         status_venda: 'FINALIZADA',
         tipo_pagamento: this.divisoesPagamento[0].tipoPagamento, // Aqui estamos garantindo que o tipo de pagamento da única divisão seja salvo
+        card_type: this.divisoesPagamento[0].operacao, // Aqui estamos garantindo que o tipo de pagamento da única divisão seja salvo
         data_venda: dataFormatada
       };
   
