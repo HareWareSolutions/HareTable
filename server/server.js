@@ -8,7 +8,6 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 
-
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -752,5 +751,5 @@ app.post('/api/caixa/fechar', async (req, res) => {
 const ip = '0.0.0.0'; // Permite conexões externas
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor rodando em http://192.168.99.100:${port}`);
+  console.log(`Servidor rodando em http://192.168.99.104:${port}`);
 });

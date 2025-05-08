@@ -10,7 +10,7 @@ import { Observable } from 'rxjs';
 
 export class VendasService {
 
-  private apiUrl = 'http://192.168.99.100:5000/api'; // URL base da API
+  private apiUrl = 'http://192.168.99.104:5000/api'; // URL base da API
 
   constructor(private http: HttpClient) {}
 
