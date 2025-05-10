@@ -3,6 +3,8 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const path = require('path');
 const fs = require('fs');
@@ -10,6 +12,7 @@ const { exec } = require('child_process');
 
 const app = express();
 const port = process.env.PORT || 5000;
+
 
 // Middleware para habilitar CORS e JSON
 app.use(cors());
@@ -42,6 +45,51 @@ const upload = multer({ storage: storage });
 
 // Middleware para servir arquivos estáticos da pasta 'uploads'
 app.use('/uploads', express.static('uploads'));
+
+
+// Rota de login
+app.post('/api/login', async (req, res) => {
+  const { email, senha } = req.body;
+
+  if (!email || !senha) {
+    return res.status(400).json({ msg: 'Email e senha são obrigatórios' });
+  }
+
+  try {
+    const [rows] = await db.promise().query('SELECT * FROM USUARIOS WHERE EMAIL = ?', [email]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ msg: 'Usuário não encontrado' });
+    }
+
+    const usuario = rows[0];
+
+    const senhaCorreta = await bcrypt.compare(senha, usuario.SENHA);
+
+    if (!senhaCorreta) {
+      return res.status(401).json({ msg: 'Senha incorreta' });
+    }
+
+    const token = jwt.sign(
+      { id: usuario.ID_USUARIO, role: usuario.ROLE },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    res.json({
+      token,
+      usuario: {
+        id: usuario.ID_USUARIO,
+        nome: usuario.NOME,
+        email: usuario.EMAIL,
+        role: usuario.ROLE
+      }
+    });
+  } catch (err) {
+    console.error('Erro no login:', err); // <-- já tem isso
+    res.status(500).json({ msg: 'Erro interno do servidor', erro: err.message });
+  }
+});
 
 
 // Rota POST para imprimir o pedido sem salvar no banco

@@ -2,40 +2,55 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { AdminComponent } from './theme/layout/admin/admin.component';
 import { GuestComponent } from './theme/layout/guest/guest.component';
+import {AuthGuard} from './guards/auth.guard';
 
 const routes: Routes = [
   {
     path: '',
+    redirectTo: 'auth/login',
+    pathMatch: 'full',
+  },
+  {
+    path: '',
     component: AdminComponent,
+    canActivate: [AuthGuard], // ✅ AQUI
+    data: { roles: ['ADMIN', 'FUNCIONARIO'] }, // Protege todas as rotas internas
     children: [
       {
-        path: '',
-        redirectTo: 'dashboard',
-        pathMatch: 'full'
-      },
-      {
         path: 'dashboard',
-        loadComponent: () => import('./demo/dashboard/dashboard.component')
+        loadComponent: () => import('./demo/dashboard/dashboard.component'),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN'] }, // Somente ADMIN pode ver
       },
       {
         path: 'basic',
-        loadChildren: () => import('./demo/ui-elements/ui-basic/ui-basic.module').then((m) => m.UiBasicModule)
+        loadChildren: () => import('./demo/ui-elements/ui-basic/ui-basic.module').then((m) => m.UiBasicModule),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN'] }, // Somente ADMIN pode ver
       },
       {
         path: 'forms',
-        loadChildren: () => import('./demo/pages/form-elements/form-elements.module').then((m) => m.FormElementsModule)
+        loadChildren: () => import('./demo/pages/form-elements/form-elements.module').then((m) => m.FormElementsModule),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN'] }, // Somente ADMIN pode ver
       },
       {
         path: 'tables',
-        loadChildren: () => import('./demo/pages/tables/tables.module').then((m) => m.TablesModule)
+        loadChildren: () => import('./demo/pages/tables/tables.module').then((m) => m.TablesModule),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN', 'FUNCIONARIO'] }, // Somente ADMIN E FUNCIONARIO pode ver
       },
       {
         path: 'apexchart',
-        loadComponent: () => import('./demo/chart/apex-chart/apex-chart.component')
+        loadComponent: () => import('./demo/chart/apex-chart/apex-chart.component'),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN'] }, // Somente ADMIN pode ver
       },
       {
         path: 'sample-page',
-        loadComponent: () => import('./demo/extra/sample-page/sample-page.component')
+        loadComponent: () => import('./demo/extra/sample-page/sample-page.component'),
+        canActivate: [AuthGuard],
+        data: { roles: ['ADMIN'] }, // Somente ADMIN pode ver
       }
     ]
   },
@@ -54,6 +69,7 @@ const routes: Routes = [
     ]
   }
 ];
+
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
