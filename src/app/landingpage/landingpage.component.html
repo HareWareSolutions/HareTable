@@ -1,7 +1,7 @@
 
-<div class="promo-bar">
+<!-- <div class="promo-bar">
   <span>DESTAQUE DE PROMOÇÃO</span>
-</div>
+</div> -->
 
 <header class="header">
   <div class="logo">COLOR PRINT.</div>
@@ -13,7 +13,7 @@
     <a href="#">About Us</a>
   </nav>
   <div class="search-cart">
-    <span class="icon"> carrinho 🛒</span>
+    <!-- <span class="icon"> carrinho 🛒</span> -->
   </div>
 </header>
 
@@ -23,6 +23,7 @@
     <img src="assets/images/card.jpg" alt="Produto em destaque" />
     <h4>Signal DL</h4>
     <p>R$ 129,00</p>
+
     <button class="btn-pulse">ADICIONAR CARRINHO</button>
   </div>
 </section>
@@ -51,7 +52,7 @@
             <strong class="d-block text-success">
               R$ {{ produto.preco | number: '1.2-2' }}
             </strong>
-            <button class="btn btn-primary mt-2 w-100">Adicionar</button>
+            <button class="btn btn-primary mt-2 w-100" (click)="adicionar(produto)">Adicionar</button>
           </div>
         </div>
       </div>
@@ -80,7 +81,7 @@
             <strong class="d-block text-success">
               R$ {{ produto.preco | number: '1.2-2' }}
             </strong>
-            <button class="btn btn-primary mt-2 w-100">Adicionar</button>
+            <button class="btn btn-primary mt-2 w-100" (click)="adicionar(produto)">Adicionar</button>
           </div>
         </div>
       </div>
@@ -111,7 +112,7 @@
             <strong class="d-block text-success">
               R$ {{ produto.preco | number: '1.2-2' }}
             </strong>
-            <button class="btn btn-primary mt-2 w-100">Adicionar</button>
+            <button class="btn btn-primary mt-2 w-100" (click)="adicionar(produto)">Adicionar</button>
           </div>
         </div>
       </div>
@@ -180,4 +181,115 @@
     <p>© 2035 by Ramirez Stwart</p>
   </div>
 </footer>
+
+<!-- Carrinho Flutuante -->
+<div class="cart-float" [class.open]="carrinhoAberto">
+  <div class="cart-header">
+    <h5>Seu Carrinho 🛒</h5>
+    <button class="close-btn" (click)="toggleCarrinho()">✕</button>
+  </div>
+
+  <div class="cart-body" *ngIf="carrinho.length > 0; else vazio">
+    <div *ngFor="let item of carrinho" class="cart-item">
+      <div class="cart-item-info">
+        <strong>{{ item.nome }}</strong>
+        <div class="quantity-controls">
+          <button (click)="decrementarQuantidade(item)">−</button>
+          <span>{{ item.quantidade }}</span>
+          <button (click)="incrementarQuantidade(item)">+</button>
+        </div>
+        <p>R$ {{ item.preco * item.quantidade | number:'1.2-2' }}</p>
+      </div>
+      <button class="remove-btn" (click)="removerDoCarrinho(item)">❌</button>
+    </div>
+    <div class="cart-total">
+      <strong>Total: R$ {{ calcularTotal() | number:'1.2-2' }}</strong>
+    </div>
+  </div>
+
+  <ng-template #vazio>
+    <p class="text-muted text-center mt-3">Carrinho vazio.</p>
+  </ng-template>
+
+  <button class="btn btn-success mt-3 w-100" (click)="abrirModal()">Finalizar Pedido</button>
+</div>
+
+<!-- Botão flutuante -->
+<button class="cart-toggle" (click)="toggleCarrinho()">
+ Carrinho 🛒 <span *ngIf="carrinho.length > 0">{{ carrinho.length }}</span>
+</button>
+
+
+
+<div class="modal-backdrop" *ngIf="mostrarModal">
+  <div class="modal-content">
+    <h3>Finalizar Pedido</h3>
+    <form (ngSubmit)="finalizarPedido()" #formulario="ngForm">
+      <div class="mb-3">
+        <label>Nome:</label>
+        <input type="text" class="form-control" [(ngModel)]="dadosCliente.nome" name="nome" required />
+      </div>
+
+      <div class="mb-3">
+        <label>Telefone:</label>
+        <input type="tel" class="form-control" [(ngModel)]="dadosCliente.telefone" name="telefone" required />
+      </div>
+
+      <div class="mb-3">
+        <label>CPF:</label>
+        <input type="text" class="form-control" [(ngModel)]="dadosCliente.cpf" name="cpf" required />
+      </div>
+
+      <div class="mb-3">
+        <label>Tipo de Pedido:</label>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="tipoEntrega" [(ngModel)]="dadosCliente.tipoEntrega" value="Entrega" required />
+          <label class="form-check-label">Entrega</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="tipoEntrega" [(ngModel)]="dadosCliente.tipoEntrega" value="Retirada" />
+          <label class="form-check-label">Retirada</label>
+        </div>
+      </div>
+
+      <div class="mb-3" *ngIf="dadosCliente.tipoEntrega === 'Entrega'">
+        <label>Endereço:</label>
+        <textarea class="form-control" [(ngModel)]="dadosCliente.endereco" name="endereco" required></textarea>
+      </div>
+
+
+      <div class="mb-3">
+        <label>Forma de pagamento:</label>
+        <select class="form-control" [(ngModel)]="dadosCliente.pagamento" name="pagamento" required>
+          <option value="" disabled selected>Selecione...</option>
+          <option value="Pix">Pix</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão Crédito">Cartão Crédito</option>
+          <option value="Cartão Débito">Cartão Débito</option>
+        </select>
+      </div>
+
+      <div class="mb-3" *ngIf="dadosCliente.pagamento === 'Dinheiro'">
+        <label>Troco para quanto?</label>
+        <input type="number" class="form-control" [(ngModel)]="dadosCliente.troco" name="troco" placeholder="Ex: 50.00" />
+      </div>
+
+      <div class="mb-3">
+        <label>Observações</label>
+        <textarea class="form-control" [(ngModel)]="dadosCliente.observacao" name="observacao" rows="3" placeholder="Ex: Sem maionese, entregar no portão..."></textarea>
+      </div>
+
+      <div class="mb-3 text-center">
+        <strong>Total do Pedido:</strong>
+        <span style="font-size: 1.2rem;">R$ {{ calcularTotalCarrinho() | number:'1.2-2' }}</span>
+      </div>
+
+      <button type="submit" class="btn btn-success w-100 mt-3">Finalizar Pedido</button>
+      <button  class="btn btn-danger w-100 mt-3" (click)="fecharModal()">Cancelar Pedido</button>
+    </form>
+
+  </div>
+</div>
+
+
 
