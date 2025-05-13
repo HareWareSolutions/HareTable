@@ -153,7 +153,6 @@ ${itensArray.map(i => `* ${i.quantidade}X -- ${i.nome} `).join('\n')}
 });
 
 
-
 // Rota POST para imprimir o histórico de pedidos de uma mesa
 app.post('/api/imprimir-historico-mesa', (req, res) => {
   const { id_mesa, pedidos, nome , endereco } = req.body;
@@ -237,7 +236,7 @@ app.post('/api/imprimir-historico-mesa', (req, res) => {
 
 // Rota GET para obter todos os produtos
 app.get('/api/produtos', (req, res) => {
-  db.query('SELECT id_produto, nome, descricao, preco, quantidade_estoque, imagem FROM produto', (err, results) => {
+  db.query('SELECT id_produto, nome, descricao, preco, quantidade_estoque, imagem, categoria FROM produto', (err, results) => {
     if (err) {
       console.error('Erro ao consultar os produtos:', err);
       res.status(500).json({ error: 'Erro ao obter produtos', details: err });
@@ -247,6 +246,25 @@ app.get('/api/produtos', (req, res) => {
     }
   });
 });
+
+// Rota GET para obter produtos de uma categoria específica
+app.get('/api/produtos/categoria/:id', (req, res) => {
+  const categoriaId = req.params.id;
+
+  const query = 'SELECT id_produto, nome, descricao, preco, quantidade_estoque, imagem, categoria FROM produto WHERE categoria = ?';
+
+  db.query(query, [categoriaId], (err, results) => {
+    if (err) {
+      console.error('Erro ao consultar produtos por categoria:', err);
+      res.status(500).json({ error: 'Erro ao obter produtos por categoria', details: err });
+    } else {
+      console.log(`Produtos da categoria ${categoriaId} encontrados:`, results);
+      res.json(results);
+    }
+  });
+});
+
+
 
 // Rota POST para adicionar produtos com upload de imagem
 app.post('/api/produtos', upload.single('imagem'), (req, res) => {

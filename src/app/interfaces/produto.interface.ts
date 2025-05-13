@@ -6,4 +6,5 @@ export interface Produto {
   quantidade_estoque: number;  // Quantidade em estoque
   imagem: File | null;         // Adiciona a propriedade imagem
   imagemUrl?: string;          // Adicionando a propriedade imagemUrl
+  categoria?: string;
 }

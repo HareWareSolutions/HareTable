@@ -23,6 +23,11 @@ export class ProdutoService {
     return this.http.get(`${this.apiUrl}/produtos/${id}`);
   }
 
+  // Método para obter produtos por categoria
+  getProdutosPorCategoria(categoriaId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/produtos/categoria/${categoriaId}`);
+  }
+
   // Método para adicionar um novo produto (suporta imagem)
   addProduto(produto: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/produtos`, produto);

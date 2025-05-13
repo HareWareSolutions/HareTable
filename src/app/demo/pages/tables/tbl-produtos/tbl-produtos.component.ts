@@ -20,6 +20,7 @@ export class TblProdutosComponent implements OnInit {
     quantidade_estoque: 0,
     imagem: null,
     imagemUrl: '',  // Propriedade para URL da imagem
+    categoria:'',
   };
 
   mostrarFormulario = false;
