@@ -182,15 +182,11 @@ export class TblPedidosComponent implements OnInit {
     
   }
 
-  cancelarPedido(pedido: Pedido, event: Event): void {
-    event.stopPropagation(); // Impede a alteração do status pelo clique no card
-
+  cancelarPedido(pedido: Pedido): void {
     if (confirm('Tem certeza que deseja cancelar este pedido?')) {
-      this.pedidoService.deletePedido(pedido.id_pedido.toString()).subscribe(
+      this.pedidoService.deletePedido(pedido.id_pedido).subscribe(
         () => {
-          this.pedidos = this.pedidos.filter(p => p.id_pedido !== pedido.id_pedido);
-          this.atualizarPaginacao();
-          this.toastr.success('Pedido cancelado com sucesso!', 'Sucesso');
+          this.toastr.success('Item cancelado com sucesso!', 'Sucesso');
         },
         (error) => {
           console.error('Erro ao cancelar pedido:', error);
@@ -199,9 +195,9 @@ export class TblPedidosComponent implements OnInit {
       );
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
     
   }
 }

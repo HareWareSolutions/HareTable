@@ -189,3 +189,14 @@ input[type="number"] {
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
 }
+
+
+.list-group-item {
+  padding: 10px 15px;
+}
+
+.list-group-item .btn {
+  min-width: 32px;
+  text-align: center;
+  padding: 4px 8px;
+}

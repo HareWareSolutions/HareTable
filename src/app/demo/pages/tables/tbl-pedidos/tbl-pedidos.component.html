@@ -6,7 +6,7 @@
         <div *ngFor="let pedido of pedidosPaginados" class="col-md-4 mb-4">
           <div class="card product-card p-3 position-relative" [ngClass]="getStatusClass(pedido.status)" (click)="alterarStatus(pedido)">
             <!-- Botão Cancelar -->
-            <button class="btn btn-danger btn-cancelar" (click)="cancelarPedido(pedido, $event)">❌</button>
+            <button class="btn btn-danger btn-cancelar" (click)="cancelarPedido(pedido)">❌</button>
             <div class="card-body text-center">
               <h5 class="card-title fw-bold">Mesa: {{ pedido.numero }}</h5>
           

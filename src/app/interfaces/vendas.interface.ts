@@ -1,6 +1,7 @@
 export interface Venda {
   id_venda: number;
   id_mesa: number;        // Agora é número, pois provavelmente é um identificador numérico
+  id_empresa: number;     // Numero da empresa
   numero_mesa: number;    // Também é um número
   total: number;
   data_venda: string;     // A data vai continuar como string (formato YYYY-MM-DD)

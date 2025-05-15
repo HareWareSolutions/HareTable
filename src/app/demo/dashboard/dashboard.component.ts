@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { VendasService } from '../../services/vendas.service';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 import { Venda } from '../../interfaces/vendas.interface';
+import { Usuario } from 'src/app/interfaces/usuario.interface';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,11 +15,13 @@ import { Venda } from '../../interfaces/vendas.interface';
 export default class DashboardComponent implements OnInit {
 
   vendas: Venda[] = []; // Array para armazenar as vendas
+  usuario: Usuario;
   totalGanhos: number = 0; // Total de ganhos
   totalAbertura: number = 0;
   mostrarModalVendas: boolean = false; // Controla a visibilidade do modal de vendas
   mostrarModalCaixa : boolean = false; // Controla a visibilidade do modal do caixa
   vendaSelecionada: Venda | null = null; // Variável para armazenar a venda selecionada no modal
+  modoPrivacidade: boolean = false;
 
   totalDinheiro: number = 0;
   totalCartao: number = 0;
@@ -40,8 +43,33 @@ export default class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.getVendas();
     this.buscarCaixaAberto();
+    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
   }
   
+
+  togglePrivacidade() {
+    this.modoPrivacidade = !this.modoPrivacidade;
+    
+    // Opcional: Salvar preferência no localStorage
+    localStorage.setItem('modoPrivacidade', String(this.modoPrivacidade));
+  }
+
+  deletarVenda(venda: Venda) {
+    if (confirm('Tem certeza que deseja excluir esta venda?')) {
+      this.vendasService.deleteVenda(venda.id_venda).subscribe({
+        next: (res) => {
+          console.log('Venda deletada com sucesso!', res);
+             setTimeout(() => {
+                window.location.reload();
+              }, 800);
+        },
+        error: (err) => {
+          console.error('Erro ao deletar venda:', err);
+        }
+      });
+    }
+  }
+
 
   // Método para obter as vendas
   getVendas(): void {
@@ -235,7 +263,6 @@ export default class DashboardComponent implements OnInit {
     }
     
 
-
   abrirModalCaixa(): void {
     this.mostrarModalCaixa = true;  // Exibe o modal de detalhes
     console.log('Modal Aberto!');
@@ -253,7 +280,8 @@ export default class DashboardComponent implements OnInit {
     }
 
     const dados = {
-      total_abertura: this.totalAbertura
+      total_abertura: this.totalAbertura,
+      id_empresa: this.usuario.id_empresa  // <- Adicionado aqui
     };
 
     this.vendasService.iniciarCaixa(dados).subscribe(

@@ -51,3 +51,42 @@
 .modal-body {
   padding: 25px;
 }
+
+
+.botao-privacidade {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #e0e0e0;
+  }
+  
+  &.ativo {
+    background-color: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+  }
+}
+
+.sensivel {
+  filter: blur(4px);
+  user-select: none;
+  transition: filter 0.3s ease;
+  
+  &:hover {
+    filter: blur(0);
+  }
+}
+
+/* Opcional: Aplicar a todos os elementos financeiros automaticamente */
+[class*="total"], [class*="valor"] {
+  transition: filter 0.3s ease;
+}

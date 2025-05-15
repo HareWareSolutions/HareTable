@@ -35,40 +35,82 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
+const accessToken = 'APP_USR-6836621365203261-060316-bee68e8296fad6316e04b9657ff4dc83-2456453806'
 
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 
-const client = new MercadoPagoConfig({ accessToken: 'TEST-7519162944104129-051502-e27bff2be32db41658d2acb82f8e10c7-2438595311' });
+const client = new MercadoPagoConfig({
+    accessToken: accessToken,
+    options: {
+        timeout: 5000
+    }
+});
 
-const payment = new Payment(client); // <- Sem `new` no método abaixo
 
 app.post('/api/pix', async (req, res) => {
-  try {
-    const { nome, sobrenome, email, valor } = req.body;
+  const payment = new Payment(client);
 
-    const result = await payment.create({
-      transaction_amount: Number(valor),
-      description: 'Pagamento de pedido via PIX',
-      payment_method_id: 'pix',
-      payer: {
-        email: email,
-        first_name: nome,
-        last_name: sobrenome
+  const { transaction_amount, description, payer_email } = req.body;
+
+  const formattedAmount = parseFloat(parseFloat(transaction_amount).toFixed(2));
+
+  const body = {
+    transaction_amount: formattedAmount,
+    description: description || 'Pagamento via PIX',
+    payment_method_id: 'pix',
+    payer: {
+      email: payer_email
+    },
+    binary_mode: true
+  };
+
+  const result = await payment.create({ body });
+
+  const paymentInfo = {
+    id: result.id,
+    status: result.status,
+    status_detail: result.status_detail,
+    qr_code: result.point_of_interaction.transaction_data.qr_code,
+    qr_code_base64: result.point_of_interaction.transaction_data.qr_code_base64,
+    ticket_url: result.point_of_interaction.transaction_data.ticket_url,
+    transaction_amount: result.transaction_amount,
+  };
+
+  console.log('ID do pagamento criado:', result.id);
+  res.json(paymentInfo);
+  
+});
+
+
+app.get('/api/pix/status/:id', async (req, res) => {
+  const paymentId = req.params.id;
+
+  try {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
       }
     });
 
-    return res.json({
-      id: result.id,
-      status: result.status,
-      qr_code_base64: result.point_of_interaction.transaction_data.qr_code_base64,
-      qr_code: result.point_of_interaction.transaction_data.qr_code,
-    });
+    const data = await response.json();
 
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao consultar pagamento');
+    }
+
+    // Extrair apenas status
+    const status = data.status;
+    const statusDetail = data.status_detail;
+    
+    res.status(200).json({ status});
+  
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao gerar PIX.' });
+    console.error('Erro ao consultar pagamento:', error.message);
+    res.status(500).json({ error: error.message });
   }
+
 });
+
 
 
 // Configuração do multer para o upload de imagens
@@ -124,6 +166,7 @@ app.post('/api/login', async (req, res) => {
         id: usuario.ID_USUARIO,
         nome: usuario.NOME,
         email: usuario.EMAIL,
+        id_empresa:usuario.id_empresa,
         role: usuario.ROLE
       }
     });
@@ -131,6 +174,31 @@ app.post('/api/login', async (req, res) => {
     console.error('Erro no login:', err); // <-- já tem isso
     res.status(500).json({ msg: 'Erro interno do servidor', erro: err.message });
   }
+});
+
+
+// Rota de impressão com filtro por id_empresa
+app.get('/api/pedidos-para-imprimir', (req, res) => {
+  const id_empresa = req.query.id_empresa;
+
+  if (!id_empresa) {
+    return res.status(400).json({ error: 'Parâmetro id_empresa é obrigatório.' });
+  }
+
+  const query = `
+    SELECT * FROM pedido
+    WHERE impresso = 0 
+      AND id_empresa = ?
+  `;
+
+  db.query(query, [id_empresa], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar pedidos não impressos:', err);
+      res.status(500).json({ error: 'Erro ao consultar pedidos', details: err });
+    } else {
+      res.json(results);
+    }
+  });
 });
 
 
@@ -193,6 +261,78 @@ ${itensArray.map(i => `* ${i.quantidade}X -- ${i.nome} `).join('\n')}
     res.status(200).json({ message: 'Pedido impresso com sucesso' });
   });
 });
+
+
+// POST /api/solicitar-historico (Frontend chama ao clicar no botão)
+app.post('/api/solicitar-historico', (req, res) => {
+  const { id_mesa, pedidos, nome, endereco, id_empresa } = req.body;
+
+  if (!id_mesa || !pedidos || pedidos.length === 0) {
+    return res.status(400).json({ error: 'Dados obrigatórios faltando!' });
+  }
+
+  const query = `
+    INSERT INTO historico (id_mesa, pedidos, nome_cliente, endereco_cliente,id_empresa) 
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  db.query(query, [id_mesa, JSON.stringify(pedidos), nome, endereco,id_empresa], (err) => {
+    if (err) return res.status(500).json({ error: 'Erro ao salvar histórico.' });
+    res.json({ success: true, message: 'Histórico enviado para fila de impressão.' });
+  });
+});
+
+
+// PUT /api/historico/:id/marcar-impresso (App local chama após imprimir)
+app.put('/api/historico/:id/marcar-impresso', (req, res) => {
+  const { id } = req.params;
+  db.query(
+    'UPDATE historico_pedidos SET impresso = true WHERE id_historico = ?',
+    [id],
+    (err) => {
+      if (err) return res.status(500).json({ error: 'Erro ao atualizar.' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete('/api/historico/:id', (req, res) => {
+  const id = req.params.id;
+
+  const query = `DELETE FROM historico WHERE id_historico = ?`;
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error('Erro ao deletar histórico:', err);
+      return res.status(500).json({ error: 'Erro ao deletar histórico.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Histórico não encontrado.' });
+    }
+
+    res.json({ success: true, message: 'Histórico deletado com sucesso.' });
+  });
+});
+
+
+app.get('/api/historico-para-imprimir', (req, res) => {
+  const { id_empresa } = req.query;
+
+  const query = `
+    SELECT * FROM historico
+    WHERE impresso = FALSE AND id_empresa = ?
+  `;
+
+  db.query(query, [id_empresa], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar históricos:', err);
+      return res.status(500).json({ error: 'Erro ao buscar históricos.' });
+    }
+
+    res.json(results);
+  });
+});
+
+
 
 
 // Rota POST para imprimir o histórico de pedidos de uma mesa
@@ -297,16 +437,12 @@ app.get('/api/produtos/categoria/:id', (req, res) => {
 
   db.query(query, [categoriaId], (err, results) => {
     if (err) {
-      console.error('Erro ao consultar produtos por categoria:', err);
       res.status(500).json({ error: 'Erro ao obter produtos por categoria', details: err });
     } else {
-      console.log(`Produtos da categoria ${categoriaId} encontrados:`, results);
       res.json(results);
     }
   });
 });
-
-
 
 // Rota POST para adicionar produtos com upload de imagem
 app.post('/api/produtos', upload.single('imagem'), (req, res) => {
@@ -418,9 +554,9 @@ app.get('/api/mesas/:id', (req, res) => {
 
 // Rota POST para adicionar uma nova mesa
 app.post('/api/mesas', (req, res) => {
-  const { numero, capacidade, status, pedidos, garcom, horaAbertura, totalConsumo,nome,ordem_type,endereco } = req.body;
-  const query = 'INSERT INTO mesa (numero, capacidade, status, pedidos, garcom, horaAbertura, totalConsumo, nome, ordem_type, endereco) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  const values = [numero, capacidade, status, JSON.stringify(pedidos), garcom, horaAbertura, totalConsumo, nome, ordem_type, endereco];
+  const { numero, capacidade, status, pedidos, garcom, horaAbertura, totalConsumo,nome,ordem_type,endereco,id_empresa,troco,telefone } = req.body;
+  const query = 'INSERT INTO mesa (numero, capacidade, status, pedidos, garcom, horaAbertura, totalConsumo, nome, ordem_type, endereco,id_empresa,troco,telefone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)';
+  const values = [numero, capacidade, status, JSON.stringify(pedidos), garcom, horaAbertura, totalConsumo, nome, ordem_type, endereco,id_empresa,troco,telefone];
 
   db.query(query, values, (err, result) => {
     if (err) {
@@ -556,6 +692,42 @@ app.post('/api/pedidos', (req, res) => {
   });
 });
 
+// Rota POST para adicionar pedidos em lote
+app.post('/api/pedidos/lote', (req, res) => {
+  const pedidos = req.body; // Array de objetos
+
+  if (!Array.isArray(pedidos) || pedidos.length === 0) {
+    return res.status(400).json({ error: 'Lista de pedidos inválida ou vazia' });
+  }
+
+  const values = pedidos.map(p => [
+    p.id_mesa,
+    p.id_item,
+    p.id_empresa,
+    p.impresso,
+    p.nome_item,
+    p.preco,
+    p.quantidade,
+    p.observacao || null,
+    p.data_pedido || new Date()
+  ]);
+
+  const sql = `
+    INSERT INTO pedido (id_mesa, id_item, id_empresa, impresso, nome_item, preco, quantidade, observacao, data_pedido)
+    VALUES ?
+  `;
+
+  db.query(sql, [values], (err, result) => {
+    if (err) {
+      console.error('Erro ao adicionar pedidos em lote:', err);
+      return res.status(500).json({ error: 'Erro ao adicionar pedidos em lote' });
+    }
+
+    res.status(201).json({ message: 'Pedidos adicionados com sucesso', inserted: result.affectedRows });
+  });
+});
+
+
 
 app.get('/api/pedidos', (req, res) => {
   db.query('SELECT * FROM pedidos where  status != "Finalizado"', (err, results) => {
@@ -570,38 +742,134 @@ app.get('/api/pedidos', (req, res) => {
 });
 
 
-app.get('/api/mesas/:id/historico-pedidos', (req, res) => {
-  const mesaId = req.params.id;
+app.get('/api/pedidos/total-mesa', (req, res) => {
+  const { id_empresa, id_mesa } = req.query;
 
-  const query = `SELECT * FROM pedidos WHERE id_mesa = ? ORDER BY data DESC`;
+  const query = `
+    SELECT 
+      id_empresa,
+      id_mesa,
+      SUM(preco * quantidade) AS total_consumo
+    FROM 
+      pedido
+    WHERE 
+      id_empresa = ? AND id_mesa = ?
+    GROUP BY 
+      id_empresa, id_mesa
+  `;
 
-  db.query(query, [mesaId], (err, results) => {
+  db.query(query, [id_empresa, id_mesa], (err, results) => {
     if (err) {
-      console.error('Erro ao buscar histórico de pedidos:', err);
-      return res.status(500).json({ error: 'Erro ao buscar histórico de pedidos' });
+      console.error('Erro ao buscar total da mesa:', err);
+      return res.status(500).json({ error: 'Erro no servidor' });
     }
 
-    // Verificar e parsear o campo 'itens' corretamente
-    const pedidosComItens = results.map(pedido => {
-      try {
-        pedido.itens = JSON.parse(pedido.itens); // Parse o campo itens, que está em JSON
-      } catch (err) {
-        pedido.itens = []; // Caso o parse falhe, garanta que itens seja um array vazio
-      }
-      return pedido;
-    });
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Nenhum pedido encontrado para essa mesa' });
+    }
 
-    res.json(pedidosComItens);
+    res.status(200).json(results[0]); // retorna o total_consumo
+  });
+});
+
+
+// Rota para calcular e atualizar o total de consumo de uma mesa
+app.get('/api/pedidos/atualizar-total-mesa', (req, res) => {
+  const { id_empresa, id_mesa } = req.query;
+
+  if (!id_empresa || !id_mesa) {
+    return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes.' });
+  }
+
+  const sqlTotal = `
+    SELECT SUM(preco * quantidade) AS total
+    FROM pedido
+    WHERE id_mesa = ? AND id_empresa = ?
+  `;
+
+  db.query(sqlTotal, [id_mesa, id_empresa], (err, results) => {
+    if (err) {
+      console.error('Erro ao calcular total:', err);
+      return res.status(500).json({ error: 'Erro ao calcular total' });
+    }
+
+    const total = results[0].total || 0;
+
+    console.log(total,'Total dentro do server')
+
+    const sqlUpdate = `
+      UPDATE mesa
+      SET totalConsumo = ?
+      WHERE id_mesa = ? AND id_empresa = ?
+    `;
+
+    db.query(sqlUpdate, [total, id_mesa, id_empresa], (err, result) => {
+      if (err) {
+        console.error('Erro ao atualizar total na tabela mesa:', err);
+        return res.status(500).json({ error: 'Erro ao atualizar total' });
+      }
+
+      res.status(200).json({ message: 'Total atualizado com sucesso', total });
+    });
   });
 });
 
 
 
+app.get('/api/mesas/:id_mesa/historico-pedidos', (req, res) => {
+  const id_mesa = req.params.id_mesa;
+  const id_empresa = req.query.id_empresa;
+
+  if (!id_empresa) {
+    return res.status(400).json({ error: 'id_empresa é obrigatório' });
+  }
+
+  const query = `
+    SELECT * FROM pedido
+    WHERE id_mesa = ? AND id_empresa = ?
+    ORDER BY data_hora DESC
+  `;
+
+  db.query(query, [id_mesa, id_empresa], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar histórico de pedidos:', err);
+      return res.status(500).json({ error: 'Erro ao buscar histórico de pedidos' });
+    }
+
+    res.json(results); // Apenas retorna os itens diretamente
+  });
+});
+
+
+// Rota para buscar os pedidos de uma mesa específica por empresa
+app.get('/api/mesas/:id_mesa/pedidos', (req, res) => {
+  const id_mesa = req.params.id_mesa;
+  const id_empresa = req.query.id_empresa;
+
+  if (!id_empresa) {
+    return res.status(400).json({ error: 'id_empresa é obrigatório' });
+  }
+
+  const query = `
+    SELECT * FROM pedido
+    WHERE id_mesa = ? AND id_empresa = ?
+    ORDER BY data_pedido DESC
+  `;
+
+  db.query(query, [id_mesa, id_empresa], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar pedidos da mesa:', err);
+      return res.status(500).json({ error: 'Erro ao buscar pedidos da mesa' });
+    }
+
+    res.json(results);
+  });
+});
 
 // Rota GET para obter um pedido específico pelo ID
 app.get('/api/pedidos/:id', (req, res) => {
   const { id } = req.params;
-  db.query('SELECT * FROM pedidos WHERE id_pedido = ?', [id], (err, results) => {
+  db.query('SELECT * FROM pedido WHERE id_pedido = ?', [id], (err, results) => {
     if (err) {
       console.error('Erro ao consultar o pedido:', err);
       res.status(500).json({ error: 'Erro ao obter pedido', details: err });
@@ -639,11 +907,35 @@ app.put('/api/pedidos/:id', (req, res) => {
   });
 });
 
+// Rota: PUT /api/pedidos/:id/impresso
+app.put('/api/pedidos/:id/impresso', (req, res) => {
+  const { id } = req.params;
+  const { impresso } = req.body; // { "impresso": true/false }
+
+  const query = `
+    UPDATE pedido
+    SET impresso = ?
+    WHERE id_pedido = ?
+  `;
+  const values = [impresso, id];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Erro ao atualizar impressão:', err);
+      res.status(500).json({ error: 'Fodeu, deu erro no servidor' });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ error: 'Pedido não existe, bro' });
+    } else {
+      res.json({ success: true, message: 'Impressão atualizada, firmeza!' });
+    }
+  });
+});
+
 
 // Rota DELETE para excluir um pedido
 app.delete('/api/pedidos/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM pedidos WHERE id_pedido = ?', [id], (err, result) => {
+  db.query('DELETE FROM pedido WHERE id_pedido = ?', [id], (err, result) => {
     if (err) {
       console.error('Erro ao deletar pedido:', err);
       res.status(500).json({ error: 'Erro ao deletar pedido' });
@@ -662,6 +954,7 @@ app.post('/api/vendas', (req, res) => {
   const {
     id_mesa,
     numero_mesa,
+    id_empresa,
     total,
     data_venda,
     hora_venda,
@@ -673,24 +966,25 @@ app.post('/api/vendas', (req, res) => {
   } = req.body;
 
   // Buscar o ID do caixa atualmente aberto
-  db.query('SELECT ID_CAIXA FROM CAIXA WHERE STATUS = "ABERTO" ORDER BY ID_CAIXA DESC LIMIT 1', (err, result) => {
+  db.query('SELECT id_caixa FROM CAIXA WHERE status = "ABERTO" and id_empresa = ?  ORDER BY ID_CAIXA DESC LIMIT 1', [id_empresa],  (err, result) => {
     if (err) {
       console.error('Erro ao buscar caixa aberto:', err);
       return res.status(500).json({ error: 'Erro ao buscar caixa aberto' });
     }
 
+
     if (result.length === 0) {
       return res.status(400).json({ error: 'Nenhum caixa aberto no momento' });
     }
 
-    const id_caixa = result[0].ID_CAIXA;
+    const id_caixa = result[0].id_caixa;
 
     // Inserir a venda na tabela 'vendas' com ID_CAIXA
     const query = `
-      INSERT INTO vendas (id_mesa, numero_mesa, total, data_venda, hora_venda, nota, status_venda, tipo_pagamento, movimento, card_type, ID_CAIXA)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO vendas (id_mesa, numero_mesa, total, data_venda, hora_venda, nota, status_venda, tipo_pagamento, movimento, card_type, id_caixa, id_empresa)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const values = [id_mesa, numero_mesa, total, data_venda, hora_venda, nota, status_venda, tipo_pagamento, movimento, card_type, id_caixa];
+    const values = [id_mesa, numero_mesa, total, data_venda, hora_venda, nota, status_venda, tipo_pagamento, movimento, card_type, id_caixa, id_empresa];
 
     db.query(query, values, (err, result) => {
       if (err) {
@@ -708,7 +1002,7 @@ app.post('/api/vendas', (req, res) => {
 // Rota GET para listar todas as vendas do caixa aberto
 app.get('/api/vendas', (req, res) => {
   // Primeiro, buscar o ID do caixa que está aberto
-  db.query('SELECT ID_CAIXA FROM CAIXA WHERE STATUS = "ABERTO" ORDER BY ID_CAIXA DESC LIMIT 1', (err, result) => {
+  db.query('SELECT id_caixa,id_empresa FROM caixa WHERE status = "ABERTO" ORDER BY id_caixa DESC LIMIT 1', (err, result) => {
     if (err) {
       console.error('Erro ao buscar caixa aberto:', err);
       return res.status(500).json({ error: 'Erro ao buscar caixa aberto' });
@@ -718,12 +1012,13 @@ app.get('/api/vendas', (req, res) => {
       return res.status(400).json({ error: 'Nenhum caixa aberto no momento' });
     }
 
-    const id_caixa = result[0].ID_CAIXA;
+    const id_caixa = result[0].id_caixa;
+    const id_empresa = result[0].id_empresa;
 
     // Buscar as vendas que pertencem a esse caixa
-    const query = 'SELECT * FROM vendas WHERE ID_CAIXA = ? AND status_venda !="CANCELADA" ORDER BY id_venda DESC';
+    const query = 'SELECT * FROM vendas WHERE id_caixa = ? AND status_venda !="CANCELADA" and id_empresa = ? ORDER BY id_venda DESC';
 
-    db.query(query, [id_caixa], (err, results) => {
+    db.query(query, [id_caixa,id_empresa], (err, results) => {
       if (err) {
         console.error('Erro ao listar vendas:', err);
         return res.status(500).json({ error: 'Erro ao listar vendas' });
@@ -733,7 +1028,6 @@ app.get('/api/vendas', (req, res) => {
     });
   });
 });
-
 
 
 // Rota PUT para atualizar uma venda
@@ -764,23 +1058,49 @@ app.put('/api/vendas/:id', (req, res) => {
 });
 
 
+// Rota DELETE para remover uma venda específica pelo ID
+app.delete('/api/vendas/:id_venda', (req, res) => {
+  const { id_venda } = req.params;
+
+  if (!id_venda) {
+    return res.status(400).json({ error: 'ID da venda é obrigatório' });
+  }
+
+  const query = 'DELETE FROM vendas WHERE id_venda = ?';
+
+  db.query(query, [id_venda], (err, result) => {
+    if (err) {
+      console.error('Erro ao deletar venda:', err);
+      return res.status(500).json({ error: 'Erro ao deletar venda' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Venda não encontrada' });
+    }
+
+    console.log(`Venda com ID ${id_venda} deletada com sucesso`);
+    res.status(200).json({ message: 'Venda deletada com sucesso' });
+  });
+});
+
+
 // Rota POST para abrir um novo caixa
 app.post('/api/caixa', (req, res) => {
-  const { total_abertura } = req.body;
+  const { total_abertura, id_empresa } = req.body;
 
-  if (total_abertura === undefined) {
-    return res.status(400).json({ error: 'O valor de abertura é obrigatório' });
+  if (total_abertura === undefined || !id_empresa) {
+    return res.status(400).json({ error: 'O valor de abertura e o ID da empresa são obrigatórios' });
   }
 
   const data_abertura = new Date().toISOString().split('T')[0]; // Data atual (YYYY-MM-DD)
   const hora_abertura = new Date().toLocaleTimeString('pt-BR', { hour12: false }); // Hora atual (HH:mm:ss)
 
   const query = `
-    INSERT INTO CAIXA (DATA_ABERTURA, HORA_ABERTURA, TOTAL_ABERTURA, STATUS) 
-    VALUES (?, ?, ?, ?)
+    INSERT INTO caixa (DATA_ABERTURA, HORA_ABERTURA, TOTAL_ABERTURA, STATUS, ID_EMPRESA) 
+    VALUES (?, ?, ?, ?, ?)
   `;
 
-  const values = [data_abertura, hora_abertura, total_abertura, 'ABERTO'];
+  const values = [data_abertura, hora_abertura, total_abertura, 'ABERTO', id_empresa];
 
   db.query(query, values, (err, result) => {
     if (err) {

@@ -30,6 +30,11 @@ export class VendasService {
     return this.http.put(`${this.apiUrl}/vendas/${venda.id_venda}`, venda);
   }
 
+  // Método para deletar uma venda pelo ID
+  deleteVenda(id_venda: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/vendas/${id_venda}`);
+  }
+
   iniciarCaixa(dados: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/caixa`, dados);
   }

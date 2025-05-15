@@ -23,8 +23,14 @@ export class PedidoService {
     return this.http.get<Pedido>(`${this.apiUrl}/pedidos/${id}`);
   }
 
-  getHistoricoPedidosPorMesa(mesaId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/mesas/${mesaId}/historico-pedidos`);
+  // Método para obter pedidos de uma mesa
+  getHistoricoPedidosPorMesa(id_mesa: number, id_empresa: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/mesas/${id_mesa}/historico-pedidos?id_empresa=${id_empresa}`);
+  }
+
+  // Método para obter os pedidos de uma mesa por id_mesa e id_empresa
+  getPedidosPorMesa(id_mesa: number, id_empresa: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/mesas/${id_mesa}/pedidos?id_empresa=${id_empresa}`);
   }
   
   // Método para adicionar um novo pedido
@@ -38,7 +44,7 @@ export class PedidoService {
   }
 
   // Método para deletar um pedido
-  deletePedido(id: string): Observable<void> {
+  deletePedido(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/pedidos/${id}`);
   }
 
@@ -67,5 +73,39 @@ export class PedidoService {
     const payload = { id_mesa: mesaId, pedidos: pedidos,nome: nome, endereco: endereco };
     return this.http.post(`${this.apiUrl}/imprimir-historico-mesa`, payload);
   }
+
+  // Método para solicitar o histórico de uma mesa solicitarHistorico
+  solicitarHistorico(mesaId: number, pedidos: any[],nome: string, endereco: string,id_empresa: number): Observable<any> {
+    const payload = { id_mesa: mesaId, pedidos: pedidos,nome: nome, endereco: endereco, id_empresa: id_empresa };
+    return this.http.post(`${this.apiUrl}/solicitar-historico`, payload);
+  }
+
+  addPedidosEmLote(pedidos: any[]) {
+    return this.http.post(`${this.apiUrl}/pedidos/lote`, pedidos);
+  }
+
+  // Método para obter o total consumido por uma mesa de uma empresa
+  getTotalConsumoMesa(id_empresa: number, id_mesa: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/pedidos/total-mesa`, {
+      params: {
+        id_empresa: id_empresa.toString(),
+        id_mesa: id_mesa.toString()
+      }
+    });
+  }
+
+ // Método para obter o total consumido por uma mesa de uma empresa
+  getAtualizaTotalMesa(id_empresa: number, id_mesa: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/pedidos/atualizar-total-mesa`, {
+      params: {
+        id_empresa: id_empresa.toString(),
+        id_mesa: id_mesa.toString()
+      }
+    });
+  }
+
+
+  
+
   
 }

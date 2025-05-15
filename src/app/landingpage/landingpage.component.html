@@ -4,13 +4,13 @@
 </div> -->
 
 <header class="header">
-  <div class="logo">COLOR PRINT.</div>
+  <div class="logo">CARAMELO DOG & BURGUER</div>
   <nav class="nav">
-    <a href="#">LOJA</a>
+    <!-- <a href="#">LOJA</a>
     <a href="#">PROMOÇÕES</a>
     <a href="#">SOBRE</a>
     <a href="#">CONTATO</a>
-    <a href="#">About Us</a>
+    <a href="#">About Us</a> -->
   </nav>
   <div class="search-cart">
     <!-- <span class="icon"> carrinho 🛒</span> -->
@@ -19,13 +19,14 @@
 
 <section class="banner fade-in">
   <img src="assets/images/banner.jpg" alt="Banner" class="banner-bg" />
-  <div class="highlight-card">
-    <img src="assets/images/card.jpg" alt="Produto em destaque" />
-    <h4>Signal DL</h4>
-    <p>R$ 129,00</p>
 
-    <button class="btn-pulse">ADICIONAR CARRINHO</button>
+  <div class="highlight-card">
+    <img [src]="produtoDestaque.imagemUrl" alt="Produto em destaque" />
+    <h4>{{ produtoDestaque.nome }}</h4>
+    <p>R$ {{ produtoDestaque.preco | number:'1.2-2' }}</p>
+    <button class="btn-pulse" (click)="adicionar(produtoDestaque)">ADICIONAR CARRINHO</button>
   </div>
+  
 </section>
 
 
@@ -121,27 +122,27 @@
 
 </div>
 
-<section class="highlight-offer fade-in">
+<!-- <section class="highlight-offer fade-in">
   <div class="offer-text">
-    <h2>CARTÃO DE VISITA 20% OFF</h2>
-    <p>Exclusive</p>
-    <button class="buy-button btn-pulse">comprar agora</button>
+    <h2>{{ produtoDestaque.nome }}</h2>
+    <p>R$ {{ produtoDestaque.preco | number:'1.2-2' }}</p>
+    <button class="buy-button btn-pulse" (click)="adicionar(produtoDestaque)">comprar agora</button>
   </div>
   <div class="offer-image">
-    <img src="assets/images/produto4.jpg" alt="Cartão de visita em promoção" />
+    <img [src]="produtoDestaque.imagemUrl" alt="Cartão de visita em promoção" />
   </div>
-</section>
+</section> -->
 
 
 <footer class="site-footer">
   <div class="footer-content">
-    <div class="footer-column">
+    <!-- <div class="footer-column">
       <h4>LOJA</h4>
       <ul>
         <li><a href="#">All products</a></li>
         <li><a href="#">Best Sellers</a></li>
       </ul>
-    </div>
+    </div> -->
     <div class="footer-column">
       <h4>POLITICAS</h4>
       <ul>
@@ -157,13 +158,13 @@
     <div class="footer-column">
       <h4>SOCIAL</h4>
       <ul>
-        <li><a href="#">Instagram</a></li>
+        <li><a href="https://www.instagram.com/caramelodogburguer">caramelodogburguer</a></li>
         <li><a href="#">Facebook</a></li>
         <li><a href="#">X</a></li>
         <li><a href="#">Tik Tok</a></li>
       </ul>
     </div>
-    <div class="footer-column">
+    <!-- <div class="footer-column">
       <h4>ORÇAMENTOS</h4>
       <p>Faça seu orçamento online</p>
       <form>
@@ -174,10 +175,10 @@
         </label>
         <button type="submit">SIGN UP</button>
       </form>
-    </div>
+    </div> -->
   </div>
   <div class="footer-bottom">
-    <h2>COLOR PRINT.</h2>
+    <h2>CARAMELO DOG BURGUER.</h2>
     <p>© 2035 by Ramirez Stwart</p>
   </div>
 </footer>
@@ -232,12 +233,12 @@
 
       <div class="mb-3">
         <label>Telefone:</label>
-        <input type="tel" class="form-control" [(ngModel)]="dadosCliente.telefone" name="telefone" required />
+        <input type="tel" class="form-control" [(ngModel)]="dadosCliente.telefone" mask="(00) 00000-0000"  placeholder="000.000.000-00" name="telefone" required />
       </div>
 
       <div class="mb-3">
         <label>CPF:</label>
-        <input type="text" class="form-control" [(ngModel)]="dadosCliente.cpf" name="cpf" required />
+        <input type="text" class="form-control" [(ngModel)]="dadosCliente.cpf"  mask="000.000.000-00"   placeholder="000.000.000-00" name="cpf" required />
       </div>
 
       <div class="mb-3">
@@ -271,7 +272,7 @@
 
       <div class="mb-3" *ngIf="dadosCliente.pagamento === 'Dinheiro'">
         <label>Troco para quanto?</label>
-        <input type="number" class="form-control" [(ngModel)]="dadosCliente.troco" name="troco" placeholder="Ex: 50.00" />
+        <input type="number" class="form-control" [(ngModel)]="dadosCliente.troco" name="troco" placeholder="Ex: 50.00 separado por ." />
       </div>
 
       <div class="mb-3">
@@ -283,6 +284,7 @@
         <strong>Total do Pedido:</strong>
         <span style="font-size: 1.2rem;">R$ {{ calcularTotalCarrinho() | number:'1.2-2' }}</span>
       </div>
+
 
       <button type="submit" class="btn btn-success w-100 mt-3">Finalizar Pedido</button>
       <button  class="btn btn-danger w-100 mt-3" (click)="fecharModal()">Cancelar Pedido</button>

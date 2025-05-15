@@ -25,6 +25,7 @@ import { NavSearchComponent } from './theme/layout/admin/nav-bar/nav-left/nav-se
 import { NavigationItem } from './theme/layout/admin/navigation/navigation';
 import { ToggleFullScreenDirective } from './theme/shared/components/full-screen/toggle-full-screen';
 import { ToastrModule } from 'ngx-toastr'; // Módulo Toastr
+import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
 
 @NgModule({
   declarations: [
@@ -52,9 +53,10 @@ import { ToastrModule } from 'ngx-toastr'; // Módulo Toastr
     ReactiveFormsModule,
     SharedModule,
     BrowserAnimationsModule,
+    NgxMaskDirective,
     HttpClientModule  // Adicionado o HttpClientModule aqui
   ],
-  providers: [NavigationItem],
+  providers: [NavigationItem,provideNgxMask()],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

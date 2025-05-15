@@ -1,16 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { ProdutoService } from 'src/app/services/produto.service';
 import { Produto } from 'src/app/interfaces/produto.interface';
-import { ToastrService } from 'ngx-toastr'; // Se estiver usando ngx-toastr
-
+import { ToastrService } from 'ngx-toastr';
+import { PedidoService } from 'src/app/services/pedidos.service';
+import { MesaService } from 'src/app/services/mesa.service';
+import { PixService, PixRequest  } from 'src/app/services/pix.service';
+import { interval, takeWhile, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-landingpage',
   templateUrl: './landingpage.component.html',
   styleUrls: ['./landingpage.component.scss']
 })
-
-
 export class LandingpageComponent implements OnInit {
   lanches: Produto[] = [];
   bebidas: Produto[] = [];
@@ -23,18 +24,30 @@ export class LandingpageComponent implements OnInit {
     cpf: '',
     endereco: '',
     tipoEntrega: '',
-    troco: null,
+    troco: 0,
     observacao: '',
     pagamento: ''
   };
 
+  produtoDestaque = {
+    id_produto: 999, // um ID fictício, só precisa ser único
+    nome: 'Combo',
+    descricao: 'Combo promocional especial',
+    preco: 25.00,
+    imagemUrl: 'assets/images/promo.jpg'
+  };
+
   carrinho: any[] = [];
   carrinhoAberto = false;
-
   mostrarModal = false;
+  qrCodePix: string = '';
+  statusPagamento: string = 'Aguardando pagamento...';
 
   constructor(
     private produtoService: ProdutoService,
+    private pedidoService: PedidoService,
+    private mesaService: MesaService,
+    private pixService: PixService,
     private toastr: ToastrService
   ) {}
 
@@ -43,9 +56,9 @@ export class LandingpageComponent implements OnInit {
   }
 
   carregarProdutos(): void {
-  this.carregarPorCategoria('lanche', 'lanches');
-  this.carregarPorCategoria('bebidas', 'bebidas');
-  this.carregarPorCategoria('dogs', 'dogs');
+    this.carregarPorCategoria('lanche', 'lanches');
+    this.carregarPorCategoria('bebidas', 'bebidas');
+    this.carregarPorCategoria('dogs', 'dogs');
   }
 
   private carregarPorCategoria(categoria: string, destino: 'lanches' | 'bebidas' | 'dogs'): void {
@@ -55,7 +68,6 @@ export class LandingpageComponent implements OnInit {
           ...produto,
           imagemUrl: produto.imagem ? `http://localhost:5000${produto.imagem}` : ''
         }));
-        console.log(this[destino], categoria);
       },
       (error) => {
         this.erro = 'Erro ao carregar produtos';
@@ -64,14 +76,14 @@ export class LandingpageComponent implements OnInit {
     );
   }
 
-adicionar(produto: any) {
-  const existente = this.carrinho.find(p => p.id_produto === produto.id_produto);
-  if (existente) {
-    existente.quantidade += 1;
-  } else {
-    this.carrinho.push({ ...produto, quantidade: 1 });
+  adicionar(produto: any) {
+    const existente = this.carrinho.find(p => p.id_produto === produto.id_produto);
+    if (existente) {
+      existente.quantidade += 1;
+    } else {
+      this.carrinho.push({ ...produto, quantidade: 1 });
+    }
   }
-}
 
   incrementarQuantidade(produto: any) {
     const item = this.carrinho.find(p => p.id === produto.id);
@@ -102,9 +114,8 @@ adicionar(produto: any) {
     this.carrinhoAberto = !this.carrinhoAberto;
   }
 
-
   abrirModal() {
-  this.mostrarModal = true;
+    this.mostrarModal = true;
   }
 
   fecharModal() {
@@ -116,34 +127,154 @@ adicionar(produto: any) {
       this.dadosCliente.endereco = '';
     }
   }
+  
+  finalizarPedido(): void {
+    const dataAtual = new Date();
+    const data_pedido = dataAtual.toISOString().slice(0, 10);
+    const hora_pedido = dataAtual.toLocaleTimeString('pt-BR', { hour12: false });
+    const dataHoraPedido = `${data_pedido} ${hora_pedido}`;
 
-  finalizarPedido() {
-    // if (!this.dadosCliente.nome || !this.dadosCliente.telefone || !this.dadosCliente.endereco || !this.dadosCliente.pagamento) {
-    //   alert('É obrigatorio prencher todos os campos.');
-    //   return;
-    // }
+    const valorpedido = this.calcularTotalCarrinho();
 
-    const pedidoFinal = {
-      cliente: { ...this.dadosCliente },
-      produtos: [...this.carrinho],
-      total: this.calcularTotal()
+
+    const novaMesa = {
+      nome: this.dadosCliente.nome,
+      status: 'Aberta',
+      numero: 100,
+      ordem_type: 'Pedido',
+      capacidade: 1,
+      endereco: this.dadosCliente.endereco || '',
+      id_empresa: 1,
+      troco:this.dadosCliente.troco || 0,
+      telefone:this.dadosCliente.telefone || '',
+      totalConsumo: this.calcularTotalCarrinho()
     };
 
-    console.log('Pedido enviado:', pedidoFinal);
+    console.log(this.dadosCliente.telefone ,'this.dadosCliente.telefone ')
 
-    // Aqui você pode futuramente enviar para uma API ou WhatsApp
-    // alert('Pedido confirmado! Obrigado pela preferência 😊');
+    if (this.dadosCliente.pagamento === 'Pix') {
 
-    // // Resetar
-    // this.carrinho = [];
-    // this.fecharModal();
+      const dadosPix = {
+        transaction_amount: valorpedido,
+        description:'pagamento via pix',
+        payer_email: 'caramelodogburguer@gmail.com',
+      };
+          
+      this.pixService.gerarPagamentoPix(dadosPix).subscribe({
+        next: (res) => {
+          console.log('PIX gerado:', res);
+          window.open(res.ticket_url, '_blank');
+
+          this.iniciarVerificacaoStatus(res.id, novaMesa, dataHoraPedido); // ✅ passa os dados aqui
+        },
+        error: (err) => {
+          console.error('Erro ao gerar PIX:', err);
+          this.toastr.error('Erro ao gerar pagamento. Tente novamente.');
+        }
+      });
+
+    } else {
+
+        // metodo para criar a mesa e adicionar pedido em lote
+        this.mesaService.addMesa(novaMesa).subscribe({
+          next: (mesaCriada) => {
+            const id_mesa = mesaCriada.id;
+
+            const pedidosEmLote = this.carrinho.map(produto => ({
+              id_pedido: 0,
+              id_mesa: id_mesa,
+              id_item: produto.id_produto,
+              nome_item: produto.nome,
+              impresso: 0,
+              preco: parseFloat(produto.preco),
+              quantidade: produto.quantidade,
+              observacao: this.dadosCliente.observacao || '',
+              data_hora: dataHoraPedido,
+              status: 'Solicitado',
+              id_empresa: 1
+            }));
+
+            this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
+              this.toastr.success('Pedidos enviados com sucesso!');
+              this.carrinho = [];
+            }, err => {
+              console.error('Erro ao enviar pedidos:', err);
+              this.toastr.error('Erro ao enviar pedidos.');
+            });
+          },
+          error: (err) => {
+            console.error('Erro ao criar mesa:', err);
+            this.toastr.error('Erro ao criar mesa. Tente novamente.');
+          }
+        });
+
+    }
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+
   }
+
+
+  
+iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): void {
+  interval(30000) // a cada 30 segundos
+    .pipe(
+      switchMap(() => this.pixService.consultarStatusPagamento(id)),
+      takeWhile(res => res.status !== 'approved', true)
+    )
+    .subscribe(res => {
+      this.statusPagamento = res.status;
+
+      if (res.status === 'approved') {
+        alert('Pagamento confirmado com sucesso!');
+
+        // ✅ Agora cria a mesa e os pedidos
+        this.mesaService.addMesa(novaMesa).subscribe({
+          next: (mesaCriada) => {
+            const id_mesa = mesaCriada.id;
+
+            const pedidosEmLote = this.carrinho.map(produto => ({
+              id_pedido: 0,
+              id_mesa: id_mesa,
+              id_item: produto.id_produto,
+              nome_item: produto.nome,
+              impresso: 0,
+              preco: parseFloat(produto.preco),
+              quantidade: produto.quantidade,
+              observacao: this.dadosCliente.observacao || '',
+              data_hora: dataHoraPedido,
+              status: 'Solicitado',
+              id_empresa: 1
+            }));
+
+            this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
+              this.toastr.success('Pedidos enviados com sucesso!');
+              this.carrinho = [];
+            }, err => {
+              console.error('Erro ao enviar pedidos:', err);
+              this.toastr.error('Erro ao enviar pedidos.');
+            });
+          },
+          error: (err) => {
+            console.error('Erro ao criar mesa:', err);
+            this.toastr.error('Erro ao criar mesa. Tente novamente.');
+          }
+        });
+
+      } else {
+        console.log('Status atual do pagamento:', res.status);
+        this.toastr.info('Aguardando confirmação de pagamento via PIX...');
+      }
+    });
+}
+
+
 
   calcularTotalCarrinho(): number {
     return this.carrinho.reduce((total, item) => {
       return total + (parseFloat(item.preco) * item.quantidade);
     }, 0);
   }
-
-
 }

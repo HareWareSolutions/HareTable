@@ -3,6 +3,7 @@ import { MesaService } from 'src/app/services/mesa.service';
 import { ProdutoService } from 'src/app/services/produto.service';
 import { Mesa } from 'src/app/interfaces/mesa.interface';
 import { Produto } from 'src/app/interfaces/produto.interface';
+import { Usuario } from 'src/app/interfaces/usuario.interface';
 import { ToastrService } from 'ngx-toastr';
 import { Pedido } from 'src/app/interfaces/pedidos.interface';  // Importe a interface Pedido
 import { PedidoService } from 'src/app/services/pedidos.service';  // Adicione a importação
@@ -18,6 +19,7 @@ import { Venda } from 'src/app/interfaces/vendas.interface';  // Importe a inter
 export class TblMesasComponent implements OnInit {
   mesas: Mesa[] = [];
   produtos: Produto[] = [];
+  usuario: Usuario;
   
   mostrarModal: boolean = false;
   mostrarModalMesa: boolean = false;
@@ -38,6 +40,9 @@ export class TblMesasComponent implements OnInit {
     ordem_type: 'Pedido',
     nome:'Sem nome',
     endereco:'',
+    id_empresa: 0,
+    troco:0,
+    telefone:'',
   };
 
   mostrarFormulario = false; // Controle de exibição do formulário de adicionar mesa
@@ -64,6 +69,7 @@ export class TblMesasComponent implements OnInit {
   ngOnInit(): void {
     this.carregarMesas();
     this.carregarProdutos();
+    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
   }
 
   calcularTotalPedido(): number {
@@ -99,6 +105,9 @@ export class TblMesasComponent implements OnInit {
       ordem_type: 'Pedido',
       nome:'',
       endereco:'',
+      id_empresa:0,
+      troco:0,
+      telefone:'',
     };
   }
 
@@ -132,7 +141,6 @@ export class TblMesasComponent implements OnInit {
       this.mesaSelecionada.pedidos = [];
     }
     
-    console.log('Mesa Selecionada:', this.mesaSelecionada); // Verifique a mesa selecionada
     this.mostrarModal = true;
     this.mostrarModalDetalhes = false; // Certifique-se de que o modal de detalhes esteja fechado
     this.mostrarModalMesa = false;
@@ -203,88 +211,87 @@ export class TblMesasComponent implements OnInit {
     }
   }
 
-  
   finalizarPedido(): void {
 
-    if (this.mesaSelecionada) {
-      // Calcular o total do pedido
-      const totalPedido = this.calcularTotalPedido();
+    if (!this.mesaSelecionada || !this.mesaSelecionada.pedidos?.length) {
+      this.toastr.error('Nenhum pedido selecionado.', 'Erro');
+      return;
+    }
 
-      console.log('ITEM ENVIADOS', this.mesaSelecionada.pedidos);
-  
-      // Criar a string personalizada para os itens do pedido
-      const itensFormatados = this.mesaSelecionada.pedidos.map((pedido: any) => {
-        console.log('NOME DOS PEDIDOS', pedido);
-        return `${pedido.id_produto}|${pedido.nome}|${pedido.quantidade}|${pedido.preco}`;
-      }).join('; ');
+    const dataAtual = new Date();
+    const data_pedido = dataAtual.toISOString().slice(0, 10);
+    const hora_pedido = dataAtual.toLocaleTimeString('pt-BR', { hour12: false });
+    const dataHoraPedido = `${data_pedido} ${hora_pedido}`;
+    let totalPedido = 0;
 
-            // Obtém a data e hora atual no horário local
-      const dataAtual = new Date();
+    const pedidosIndividuais = this.mesaSelecionada.pedidos.map((item: any) => {
+      const subtotal = item.preco * item.quantidade;
+      totalPedido += subtotal;
 
-      // Para a data (no formato YYYY-MM-DD)
-      const data_pedido = dataAtual.toISOString().slice(0, 10); // Exemplo: '2025-03-21'
-
-      // Para a hora (no formato HH:MM:SS)
-      const hora_pedido = dataAtual.toLocaleTimeString('pt-BR', { hour12: false }); // Exemplo: '10:16:07'
-
-      // Concatenar a data e a hora no formato correto para o MySQL (YYYY-MM-DD HH:MM:SS)
-      const dataHorapedido= `${data_pedido} ${hora_pedido}`;
-
-
-      // Criar o objeto do pedido
-      const pedido: Pedido = {
-        id_pedido: 0,  // Este ID será gerado pelo backend
+      return {
+        id_pedido: 0,
         id_mesa: this.mesaSelecionada.id_mesa,
-        data: dataHorapedido,
-        status: 'Solicitado',  // Status do pedido
-        total: totalPedido,  // O total calculado do pedido
-        item: itensFormatados, // Enviando a string formatada
-        observacao: this.observacao || '',  // Adicionando a observação
-        numero: this.mesaSelecionada.numero,
-        nome_pe: this.mesaSelecionada.nome,
-        endereco_pe: this.mesaSelecionada.endereco,
-        ordem_type_pe: this.mesaSelecionada.ordem_type,
+        id_item: item.id_produto,
+        nome_item: item.nome,
+        impresso: 0,
+        preco: item.preco,
+        quantidade: item.quantidade,
+        observacao: item.observacao || this.observacao || '',
+        data_hora: dataHoraPedido,
+        status: 'Solicitado',
+        id_empresa: this.usuario.id_empresa
       };
-  
-      console.log('Pedido enviado:', pedido);  // Verifique se o pedido está correto
-  
-      // Adicionar o pedido no banco de dados primeiro
-      this.pedidoService.addPedido(pedido).subscribe(
-        (response) => {
-          this.toastr.success('Pedido finalizado e adicionado com sucesso!', 'Sucesso');
-  
-          // Atualizar o totalConsumido da mesa
-          const novoTotalConsumo = parseFloat(String(this.mesaSelecionada.totalConsumo || '0')) + totalPedido;
-  
-          // Atualizar a mesa com o novo total consumido
-          this.mesaSelecionada.totalConsumo = parseFloat(novoTotalConsumo.toFixed(2));
-  
-          // Agora, faça a chamada para atualizar o total no backend
-          this.mesaService.atualizarTotalConsumo(this.mesaSelecionada.id_mesa.toString(), novoTotalConsumo).subscribe(
-            (updateResponse) => {
-              console.log('Total de consumo atualizado com sucesso:', updateResponse);
+    });
+
+    // Primeiro envia os pedidos
+    this.pedidoService.addPedidosEmLote(pedidosIndividuais).subscribe(
+      (response) => {
+        this.toastr.success('Itens enviados com sucesso!', 'Sucesso');
+
+        // Só aqui você atualiza o total da mesa
+        this.pedidoService.getAtualizaTotalMesa(this.usuario.id_empresa, this.mesaSelecionada.id_mesa).subscribe(
+          (res: any) => {
+            console.log('Total consumido da mesa:', res);
+            // Se quiser atualizar localmente:
+            this.mesaSelecionada.totalConsumo = res.total;
+          },
+          (err) => {
+            console.error('Erro ao obter total da mesa:', err);
+            this.toastr.error('Erro ao consultar total da mesa', 'Erro');
+          }
+        );
+      },
+      (error) => {
+        console.error('Erro ao adicionar pedidos:', error);
+        this.toastr.error('Erro ao adicionar os pedidos', 'Erro');
+      }
+    );
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+
+  }
+
+  cancelarPedido(id_pedido,id_mesa): void {
+    if (confirm('Tem certeza que deseja cancelar este pedido?')) {
+
+      this.pedidoService.deletePedido(id_pedido).subscribe(
+        () => {
+
+          // Só aqui você atualiza o total da mesa
+          this.pedidoService.getAtualizaTotalMesa(this.usuario.id_empresa, id_mesa).subscribe(
+            (res: any) => {
+              this.toastr.success('Item cancelado com sucesso!', 'Sucesso');
             },
-            (error) => {
-              console.error('Erro ao atualizar o total de consumo:', error);
-              this.toastr.error('Erro ao atualizar o total de consumo', 'Erro');
-            }
-          );
-  
-          // Agora que o pedido foi adicionado e o total foi atualizado, imprima o pedido
-          this.pedidoService.imprimirPedido(pedido).subscribe(
-            (impressaoResponse) => {
-              console.log('Pedido impresso com sucesso', impressaoResponse);
-              this.fecharModal();
-            },
-            (error) => {
-              console.error('Erro ao imprimir o pedido:', error);
-              this.toastr.error('Erro ao imprimir o pedido', 'Erro');
+            (err) => {
+              this.toastr.success('Erro ao cancelar item do pedido', 'Erro');
             }
           );
         },
         (error) => {
-          console.error('Erro ao adicionar o pedido:', error);
-          this.toastr.error('Erro ao adicionar o pedido', 'Erro');
+          console.error('Erro ao cancelar pedido:', error);
+          this.toastr.error('Erro ao cancelar pedido', 'Erro');
         }
       );
     }
@@ -292,12 +299,12 @@ export class TblMesasComponent implements OnInit {
     setTimeout(() => {
       window.location.reload();
     }, 800);
-
+    
   }
-  
-  
+
 
   carregarMesas(): void {
+
     this.mesaService.getMesas().subscribe(
       (response: Mesa[]) => {
         this.mesas = response;
@@ -357,6 +364,9 @@ export class TblMesasComponent implements OnInit {
   }
 
   adicionarMesa(): void {
+
+    this.novaMesa.id_empresa = this.usuario.id_empresa;
+
     if (this.novaMesa.numero) {
       this.mesaService.addMesa(this.novaMesa).subscribe(
         (response) => {
@@ -399,81 +409,57 @@ export class TblMesasComponent implements OnInit {
       }
     });
   }
-  
 
 
-  carregarHistoricoPedidos(id_mesa: number): void {
-    this.pedidoService.getHistoricoPedidosPorMesa(id_mesa).subscribe(
-      (pedidos: any) => {
-        console.log('Pedidos carregados:', pedidos);
-  
-        let totalMesa = 0;  // Inicializa o total da mesa como 0
-  
-        if (pedidos && pedidos.length > 0) {
-          pedidos.forEach(pedido => {
-            let totalPedido = 0;  // Inicializa o total do pedido como 0
-  
-            try {
-              // Verifica se o item existe e faz a conversão corretamente
-              const produtosString = pedido.item;  // String com os produtos
-  
-              if (produtosString && typeof produtosString === 'string') {
-                // Converte a string de produtos em um array de objetos de produtos
-                pedido.itens = produtosString.split(';').map((produtoStr: string) => {
-                  // Remove qualquer espaço extra usando trim()
-                  const [id, nome, quantidade, preco] = produtoStr.split('|').map((campo) => campo.trim());
-    
-                  // Verifica se a quantidade e o preço são válidos
-                  const quantidadeValida = !isNaN(parseInt(quantidade, 10)) ? parseInt(quantidade, 10) : 0;
-                  const precoValido = !isNaN(parseFloat(preco)) ? parseFloat(preco) : 0;
-    
-                  // Calcular o total do item (preço * quantidade)
-                  totalPedido += precoValido * quantidadeValida;
-  
-                  return {
-                    id: id || 'ID desconhecido',  // ID do produto (adicionado)
-                    nome: nome || 'Produto desconhecido',  // Nome do produto
-                    quantidade: quantidadeValida,
-                    preco: precoValido,
-                  };
-                });
-                console.log('Itens do pedido após conversão:', pedido.itens);
-              } else {
-                pedido.itens = [];  // Se não houver itens válidos, cria um array vazio
-              }
-            } catch (e) {
-              pedido.itens = [];
-              console.error('Erro ao converter pedido.item:', e);
-            }
-  
-            // Atribui o total calculado para cada pedido
-            pedido.totalPedido = totalPedido;
-  
-            // Adiciona o total do pedido ao total da mesa
-            totalMesa += totalPedido;
-  
-            // Log para verificar a estrutura do pedido
-            console.log('Pedido após conversão:', pedido);
-          });
-  
-          // Atualiza a mesaSelecionada com os pedidos carregados
-          this.mesaSelecionada.pedidos = pedidos;
-          this.mesaSelecionada.totalMesa = totalMesa;  // Atualiza o total da mesa
-          console.log('Pedidos selecionados:', this.mesaSelecionada.pedidos);
-          console.log('Total da Mesa:', totalMesa);
-        } else {
-          console.log('Nenhum pedido encontrado para essa mesa');
-          this.mesaSelecionada.pedidos = [];
-          this.mesaSelecionada.totalMesa = 0;  // Caso não haja pedidos, o total da mesa é 0
-        }
+  solicitarHistoricoMesa(): void {
+    if (!this.mesaSelecionada || !this.mesaSelecionada.pedidos || this.mesaSelecionada.pedidos.length === 0) {
+      alert('Nenhum pedido encontrado para esta mesa!');
+      return;
+    }
+
+    this.pedidoService.solicitarHistorico(
+      this.mesaSelecionada.numero, // ou this.mesaSelecionada.numero, dependendo do seu back
+      this.mesaSelecionada.pedidos,
+      this.mesaSelecionada.nome,
+      this.mesaSelecionada.endereco,
+      this.usuario.id_empresa
+    ).subscribe({
+      next: (response) => {
+        console.log('Histórico solicitado com sucesso!', response);
+        alert('Histórico enviado para impressão com sucesso!');
       },
-      (error) => {
-        console.error('Erro ao carregar histórico de pedidos:', error);
-        this.toastr.error('Erro ao carregar histórico de pedidos', 'Erro');
+      error: (error) => {
+        console.error('Erro ao solicitar o histórico:', error);
+        alert('Erro ao solicitar o histórico de pedidos.');
+      }
+  });
+  }
+
+  carregarPedidosDaMesa(id_mesa: number): void {
+    const id_empresa = this.usuario.id_empresa; // Certifique-se que está definido
+
+    this.pedidoService.getPedidosPorMesa(id_mesa, id_empresa).subscribe(
+      (pedidos: any[]) => {
+        if (!pedidos || pedidos.length === 0) {
+          this.mesaSelecionada.pedidos = [];
+          this.mesaSelecionada.totalMesa = 0;
+          return;
+        }
+
+        this.mesaSelecionada.pedidos = pedidos;
+
+        // Calcular o total da mesa
+        this.mesaSelecionada.totalMesa = pedidos.reduce(
+          (total, p) => total + (p.preco * p.quantidade),
+          0
+        );
+      },
+      (err) => {
+        console.error('Erro ao carregar pedidos:', err);
+        this.toastr.error('Erro ao carregar pedidos da mesa', 'Erro');
       }
     );
   }
-
 
 
   abrirModalDetalhes(mesa: Mesa): void {
@@ -489,7 +475,7 @@ export class TblMesasComponent implements OnInit {
     this.mostrarModal = false; // Fecha o modal de adicionar pedido
     this.mostrarModalMesa = false;
     
-    this.carregarHistoricoPedidos(this.mesaSelecionada.id_mesa);
+    this.carregarPedidosDaMesa(this.mesaSelecionada.id_mesa);
   }
   
 
@@ -502,6 +488,7 @@ export class TblMesasComponent implements OnInit {
 
   finalizarMesa(idMesa: string): void {
     const confirmar = window.confirm('Você tem certeza que deseja finalizar a mesa?');
+
   
     if (confirmar) {
       // Finaliza a mesa, chamando o serviço de atualização de status
@@ -525,6 +512,7 @@ export class TblMesasComponent implements OnInit {
           const venda: Venda = {
             id_venda: 0, // Gerar o ID conforme a lógica da sua API
             id_mesa: mesa.id_mesa,
+            id_empresa: this.usuario.id_empresa,
             numero_mesa: mesa.numero,
             total: mesa.totalConsumo, // Assume que o total de consumo já está na mesa
             data_venda: data_venda, // Passa a data separada
@@ -558,7 +546,6 @@ export class TblMesasComponent implements OnInit {
     } else {
       console.log('Finalização da mesa cancelada');
     }
-
 
 
   }
