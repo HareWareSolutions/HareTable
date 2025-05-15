@@ -18,6 +18,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 // Configuração de conexão com o MySQL usando pool
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -28,6 +29,41 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
+const { MercadoPagoConfig, Payment } = require('mercadopago');
+
+const client = new MercadoPagoConfig({ accessToken: 'TEST-7519162944104129-051502-e27bff2be32db41658d2acb82f8e10c7-2438595311' });
+
+const payment = new Payment(client); // <- Sem `new` no método abaixo
+
+app.post('/api/pix', async (req, res) => {
+  try {
+    const { nome, sobrenome, email, valor } = req.body;
+
+    const result = await payment.create({
+      transaction_amount: Number(valor),
+      description: 'Pagamento de pedido via PIX',
+      payment_method_id: 'pix',
+      payer: {
+        email: email,
+        first_name: nome,
+        last_name: sobrenome
+      }
+    });
+
+    return res.json({
+      id: result.id,
+      status: result.status,
+      qr_code_base64: result.point_of_interaction.transaction_data.qr_code_base64,
+      qr_code: result.point_of_interaction.transaction_data.qr_code,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao gerar PIX.' });
+  }
+});
+
 
 // Configuração do multer para o upload de imagens
 const storage = multer.diskStorage({
