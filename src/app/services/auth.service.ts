@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   
-  private apiUrl = 'http://192.168.99.104:5000/api'; // mesmo padrão do MesaService
+  private apiUrl = environment.apiUrl; // mesmo padrão do MesaService
 
   constructor(private http: HttpClient) {}
 

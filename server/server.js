@@ -30,6 +30,14 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
+
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://atlas-beryl-three.vercel.app', 
+  credentials: true
+}));
+
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 
 const client = new MercadoPagoConfig({ accessToken: 'TEST-7519162944104129-051502-e27bff2be32db41658d2acb82f8e10c7-2438595311' });
