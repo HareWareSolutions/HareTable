@@ -8,7 +8,7 @@ import { environment } from 'src/environments/environment';
 })
 export class AuthService {
   
-  private apiUrl = environment.apiUrl; // mesmo padrão do MesaService
+  private apiUrl = environment.apiUrl; // API  NO ENVIROMENTS
 
   constructor(private http: HttpClient) {}
 

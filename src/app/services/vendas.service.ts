@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ import { Observable } from 'rxjs';
 
 export class VendasService {
 
-  private apiUrl = 'http://192.168.99.104:5000/api'; // URL base da API
+  private apiUrl = environment.apiUrl; // API  NO ENVIROMENTS
 
   constructor(private http: HttpClient) {}
 
