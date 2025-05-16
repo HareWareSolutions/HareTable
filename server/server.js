@@ -10,13 +10,19 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 
+const cors = require('cors');
+
 const app = express();
 const port = process.env.PORT || 5000;
 
 
 // Middleware para habilitar CORS e JSON
-app.use(cors());
 app.use(express.json());
+
+app.use(cors({
+  origin: 'https://atlas-beryl-three.vercel.app', 
+  credentials: true
+}));
 
 
 // Configuração de conexão com o MySQL usando pool
@@ -31,12 +37,6 @@ const db = mysql.createPool({
 });
 
 
-const cors = require('cors');
-
-app.use(cors({
-  origin: 'https://atlas-beryl-three.vercel.app', 
-  credentials: true
-}));
 
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 
