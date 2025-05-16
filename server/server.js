@@ -10,7 +10,6 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 
-const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -35,7 +34,6 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
-
 
 
 const { MercadoPagoConfig, Payment } = require('mercadopago');
