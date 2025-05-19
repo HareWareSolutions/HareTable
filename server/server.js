@@ -98,7 +98,7 @@ app.post('/api/login', async (req, res) => {
   }
 
   try {
-    const [rows] = await db.promise().query('SELECT * FROM USUARIOS WHERE EMAIL = ?', [email]);
+    const [rows] = await db.promise().query('select * from usuarios where email = ?', [email]);
 
     if (rows.length === 0) {
       return res.status(404).json({ msg: 'Usuário não encontrado' });
