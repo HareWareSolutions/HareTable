@@ -3,5 +3,5 @@ import packageInfo from '../../package.json';
 export const environment = {
   appVersion: packageInfo.version,
   production: true,
-  apiUrl: 'https://atlas-t65l.onrender.com' // Coloque o IP do seu PC aqui!
+  apiUrl: 'http://127.0.0.1:2000' // Coloque o IP do seu PC aqui!
 };

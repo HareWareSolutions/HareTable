@@ -12,14 +12,14 @@ const { exec } = require('child_process');
 
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 2000;
 
 
 // Middleware para habilitar CORS e JSON
 app.use(express.json());
 
 app.use(cors({
-  origin: 'https://atlas-beryl-three.vercel.app', 
+  origin: 'https://haretable.com.br', 
   credentials: true
 }));
 
