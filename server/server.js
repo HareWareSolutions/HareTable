@@ -17,18 +17,29 @@ const port = process.env.PORT || 2000;
 // Middleware para habilitar JSON
 app.use(express.json());
 
-// ✅ Configuração CORS unificada
+
+const allowedOrigins = ['https://haretable.com.br', 'https://backend.haretable.com.br'];
+
 const corsOptions = {
-  origin: 'https://haretable.com.br',
+  origin: function(origin, callback) {
+    // Se não tem origem (ex: requisição de Postman), permite
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      // Origem permitida
+      callback(null, true);
+    } else {
+      // Origem não permitida
+      callback(new Error('Não permitido por CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// Aplica CORS com as opções em todas as rotas
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // ← Isso resolve o problema com DELETE
-
+app.options('*', cors(corsOptions));
 
 
 // Reforço manual de headers CORS
