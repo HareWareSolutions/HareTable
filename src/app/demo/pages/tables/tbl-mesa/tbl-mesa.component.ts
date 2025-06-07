@@ -267,9 +267,9 @@ export class TblMesasComponent implements OnInit {
       }
     );
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
 
   }
 
@@ -296,9 +296,9 @@ export class TblMesasComponent implements OnInit {
       );
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
     
   }
 
@@ -385,9 +385,9 @@ export class TblMesasComponent implements OnInit {
       this.toastr.warning('Por favor, preencha todos os campos.', 'Aviso');
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
   
   }
 
@@ -535,9 +535,9 @@ export class TblMesasComponent implements OnInit {
           );
         });
 
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
+        // setTimeout(() => {
+        //   window.location.reload();
+        // }, 800);
 
 
       }, (error) => {

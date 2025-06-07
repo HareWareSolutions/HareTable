@@ -795,8 +795,6 @@ app.get('/api/pedidos/atualizar-total-mesa', (req, res) => {
 
     const total = results[0].total || 0;
 
-    console.log(total,'Total dentro do server')
-
     const sqlUpdate = `
       UPDATE mesa
       SET totalConsumo = ?
@@ -937,12 +935,10 @@ app.delete('/api/pedidos/:id', (req, res) => {
   const { id } = req.params;
   db.query('DELETE FROM pedido WHERE id_pedido = ?', [id], (err, result) => {
     if (err) {
-      console.error('Erro ao deletar pedido:', err);
       res.status(500).json({ error: 'Erro ao deletar pedido' });
     } else if (result.affectedRows === 0) {
       res.status(404).json({ error: 'Pedido não encontrado' });
     } else {
-      console.log('Pedido deletado com sucesso:', id);
       res.json({ message: 'Pedido deletado com sucesso' });
     }
   });
