@@ -18,9 +18,12 @@ const port = process.env.PORT || 2000;
 // Middleware para habilitar CORS e JSON
 app.use(express.json());
 
+app.options('*', cors());
+
 app.use(cors({
   origin: 'https://haretable.com.br', 
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 
@@ -931,16 +934,17 @@ app.put('/api/pedidos/:id/impresso', (req, res) => {
 
 
 // Rota DELETE para excluir um pedido
+
 app.delete('/api/pedidos/:id', (req, res) => {
   const { id } = req.params;
   db.query('DELETE FROM pedido WHERE id_pedido = ?', [id], (err, result) => {
     if (err) {
-      res.status(500).json({ error: 'Erro ao deletar pedido' });
-    } else if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Pedido não encontrado' });
-    } else {
-      res.json({ message: 'Pedido deletado com sucesso' });
+      return res.status(500).json({ error: 'Erro ao deletar pedido' });
     }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Pedido não encontrado' });
+    }
+    return res.json({ message: 'Pedido deletado com sucesso' });
   });
 });
 
