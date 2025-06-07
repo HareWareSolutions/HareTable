@@ -17,7 +17,6 @@ const port = process.env.PORT || 2000;
 // Middleware para habilitar JSON
 app.use(express.json());
 
-
 const allowedOrigins = ['https://haretable.com.br', 'https://backend.haretable.com.br'];
 
 const corsOptions = {
@@ -655,7 +654,7 @@ app.put('/api/mesas/:id', (req, res) => {
 // Rota DELETE para deletar uma mesa pelo ID
 app.delete('/api/mesas/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM mesa WHERE id_mesa = ?', [id], (err, result) => {
+  db.query('delete from mesa where id_mesa = ?', [id], (err, result) => {
     if (err) {
       console.error('Erro ao deletar mesa:', err);
       res.status(500).json({ error: 'Erro ao deletar mesa' });
