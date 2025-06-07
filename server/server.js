@@ -11,6 +11,12 @@ const fs = require('fs');
 const { exec } = require('child_process');
 
 
+const app = express();
+const port = process.env.PORT || 2000;
+
+// Middleware para habilitar JSON
+app.use(express.json());
+
 const allowedOrigins = ['https://haretable.com.br', 'https://backend.haretable.com.br'];
 
 const corsOptions = {
@@ -43,13 +49,6 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
-
-
-const app = express();
-const port = process.env.PORT || 2000;
-
-// Middleware para habilitar JSON
-app.use(express.json());
 
 // Configuração de conexão com o MySQL usando pool
 const db = mysql.createPool({
