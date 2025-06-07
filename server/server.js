@@ -966,7 +966,7 @@ app.post('/api/vendas', (req, res) => {
   } = req.body;
 
   // Buscar o ID do caixa atualmente aberto
-  db.query('SELECT id_caixa FROM CAIXA WHERE status = "ABERTO" and id_empresa = ?  ORDER BY ID_CAIXA DESC LIMIT 1', [id_empresa],  (err, result) => {
+  db.query('SELECT id_caixa FROM caixa WHERE status = "ABERTO" and id_empresa = ?  ORDER BY id_caixa DESC LIMIT 1', [id_empresa],  (err, result) => {
     if (err) {
       console.error('Erro ao buscar caixa aberto:', err);
       return res.status(500).json({ error: 'Erro ao buscar caixa aberto' });
@@ -988,11 +988,9 @@ app.post('/api/vendas', (req, res) => {
 
     db.query(query, values, (err, result) => {
       if (err) {
-        console.error('Erro ao adicionar venda:', err);
         return res.status(500).json({ error: 'Erro ao adicionar venda' });
       }
 
-      console.log('Venda adicionada com sucesso:', result);
       res.status(201).json({ message: 'Venda adicionada com sucesso', id_venda: result.insertId });
     });
   });
@@ -1096,7 +1094,7 @@ app.post('/api/caixa', (req, res) => {
   const hora_abertura = new Date().toLocaleTimeString('pt-BR', { hour12: false }); // Hora atual (HH:mm:ss)
 
   const query = `
-    INSERT INTO caixa (DATA_ABERTURA, HORA_ABERTURA, TOTAL_ABERTURA, STATUS, ID_EMPRESA) 
+    INSERT INTO caixa (data_abertura, hora_abertura, total_abertura, status, id_empresa) 
     VALUES (?, ?, ?, ?, ?)
   `;
 
@@ -1115,7 +1113,7 @@ app.post('/api/caixa', (req, res) => {
 
 
 app.get('/api/caixa/aberto', (req, res) => {
-  const query = "SELECT * FROM CAIXA WHERE STATUS = 'ABERTO' LIMIT 1";
+  const query = "SELECT * FROM caixa WHERE status = 'ABERTO' LIMIT 1";
 
   db.query(query, (err, results) => {
       if (err) {
@@ -1147,16 +1145,16 @@ app.post('/api/caixa/fechar', async (req, res) => {
     }
 
     const sql = `
-      UPDATE CAIXA SET 
-        DATA_FECHAMENTO = NOW(),
-        HORA_FECHAMENTO = NOW(),
-        TOTAL_FECHAMENTO = ?,
-        TOTAL_PIX = ?,
-        TOTAL_DINHEIRO = ?,
-        TOTAL_CREDITO = ?,
-        TOTAL_DEBITO = ?,
-        STATUS = 'FECHADO'
-      WHERE ID_CAIXA = ?
+      UPDATE caixa SET 
+        data_fechamento = NOW(),
+        hora_fechamento = NOW(),
+        total_fechamento = ?,
+        total_pix = ?,
+        total_dinheiro = ?,
+        total_credito = ?,
+        total_debito = ?,
+        status = 'FECHADO'
+      WHERE id_caixa = ?
     `;
 
     await db.execute(sql, [
