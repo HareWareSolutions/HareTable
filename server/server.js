@@ -14,17 +14,20 @@ const { exec } = require('child_process');
 const app = express();
 const port = process.env.PORT || 2000;
 
-
-// Middleware para habilitar CORS e JSON
+// Middleware para habilitar JSON
 app.use(express.json());
 
-app.options('*', cors());
-
-app.use(cors({
-  origin: 'https://haretable.com.br', 
+// ✅ Configuração CORS unificada
+const corsOptions = {
+  origin: 'https://haretable.com.br',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Aplica CORS com as opções em todas as rotas
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // ← Isso resolve o problema com DELETE
 
 
 // Configuração de conexão com o MySQL usando pool
