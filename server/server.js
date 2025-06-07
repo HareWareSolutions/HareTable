@@ -30,6 +30,16 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // ← Isso resolve o problema com DELETE
 
 
+
+// Reforço manual de headers CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://haretable.com.br");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
 // Configuração de conexão com o MySQL usando pool
 const db = mysql.createPool({
   host: process.env.DB_HOST,
