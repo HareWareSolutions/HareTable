@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
-const cors = require('cors');
+// const cors = require('cors');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -14,41 +14,33 @@ const { exec } = require('child_process');
 const app = express();
 const port = process.env.PORT || 2000;
 
+
+// const allowedOrigins = ['https://haretable.com.br', 'https://backend.haretable.com.br'];
+
+// const corsOptions = {
+//   origin: function(origin, callback) {
+//     // Se não tem origem (ex: requisição de Postman), permite
+//     if (!origin) return callback(null, true);
+
+//     if (allowedOrigins.indexOf(origin) !== -1) {
+//       // Origem permitida
+//       callback(null, true);
+//     } else {
+//       // Origem não permitida
+//       callback(new Error('Não permitido por CORS'));
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+// };
+
+// app.use(cors(corsOptions));
+// app.options('*', cors(corsOptions));
+
 // Middleware para habilitar JSON
 app.use(express.json());
 
-const allowedOrigins = ['https://haretable.com.br', 'https://backend.haretable.com.br'];
-
-const corsOptions = {
-  origin: function(origin, callback) {
-    // Se não tem origem (ex: requisição de Postman), permite
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      // Origem permitida
-      callback(null, true);
-    } else {
-      // Origem não permitida
-      callback(new Error('Não permitido por CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-
-
-// Reforço manual de headers CORS
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://haretable.com.br");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
 
 // Configuração de conexão com o MySQL usando pool
 const db = mysql.createPool({
