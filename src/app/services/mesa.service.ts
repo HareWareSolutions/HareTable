@@ -12,9 +12,9 @@ export class MesaService {
 
   constructor(private http: HttpClient) {}
 
-  // Método para obter todas as mesas
-  getMesas(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/mesas`);
+  // Método para obter todas as mesas de uma empresa (padrão com valor na URL)
+  getMesas(id_empresa: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/mesas?id_empresa=${id_empresa}`);
   }
 
   // Método para obter uma mesa específica

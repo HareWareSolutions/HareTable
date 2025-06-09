@@ -542,9 +542,16 @@ app.get('/api/funcionarios', (req, res) => {
 
 // CRUD da Mesa
 
-// Rota GET para obter todas as mesas
+// Rota GET para obter todas as mesas com base no id_empresa
 app.get('/api/mesas', (req, res) => {
-  db.query('SELECT * FROM mesa where status != "finalizada" ', (err, results) => {
+  const id_empresa = req.query.id_empresa;
+
+  const sql = `
+    SELECT * FROM mesa 
+    WHERE status != 'finalizada' AND id_empresa = ?
+  `;
+
+  db.query(sql, [id_empresa], (err, results) => {
     if (err) {
       console.error('Erro ao consultar as mesas:', err);
       res.status(500).json({ error: 'Erro ao obter mesas', details: err });
@@ -554,6 +561,7 @@ app.get('/api/mesas', (req, res) => {
     }
   });
 });
+
 
 // Rota GET para obter uma mesa pelo ID
 app.get('/api/mesas/:id', (req, res) => {

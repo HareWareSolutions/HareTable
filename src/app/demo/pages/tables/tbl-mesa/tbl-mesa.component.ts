@@ -302,10 +302,9 @@ export class TblMesasComponent implements OnInit {
     
   }
 
-
   carregarMesas(): void {
 
-    this.mesaService.getMesas().subscribe(
+    this.mesaService.getMesas(this.usuario.id_empresa).subscribe(
       (response: Mesa[]) => {
         this.mesas = response;
 
