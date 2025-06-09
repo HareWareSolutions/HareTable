@@ -67,9 +67,9 @@ export class TblMesasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     this.carregarMesas();
     this.carregarProdutos();
-    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
   }
 
   calcularTotalPedido(): number {
