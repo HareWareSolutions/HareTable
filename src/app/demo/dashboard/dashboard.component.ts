@@ -41,9 +41,9 @@ export default class DashboardComponent implements OnInit {
   constructor(private vendasService: VendasService) {}
 
   ngOnInit(): void {
+    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     this.getVendas();
     this.buscarCaixaAberto();
-    this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
   }
   
 
