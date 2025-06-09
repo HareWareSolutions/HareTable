@@ -20,9 +20,15 @@ export class VendasService {
     return this.http.post(`${this.apiUrl}/vendas`, venda);
   }
 
-   // Método para listar todas as vendas
-   getVendas(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/vendas`);
+  //  // Método para listar todas as vendas
+  //  getVendas(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/vendas`);
+  // }
+
+  getVendas(id_empresa: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/vendas`, {
+      params: { id_empresa }
+    });
   }
 
   // 🔥 Método para atualizar uma venda

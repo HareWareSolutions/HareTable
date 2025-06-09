@@ -73,7 +73,7 @@ export default class DashboardComponent implements OnInit {
 
   // Método para obter as vendas
   getVendas(): void {
-    this.vendasService.getVendas().subscribe((dados) => {
+    this.vendasService.getVendas(this.usuario.id_empresa).subscribe((dados) => {
       this.vendas = dados; // Atribui as vendas obtidas ao array vendas
       console.log('VENDAS', this.vendas);
       this.calcularTotalGanhos(); // Calcula o total dos ganhos
@@ -187,7 +187,8 @@ export default class DashboardComponent implements OnInit {
           card_type: card_type,
           data_venda: dataFormatada,
           hora_venda: this.vendaSelecionada.hora_venda,
-          id_caixa: this.caixa?.id_caixa || null
+          id_caixa: this.caixa?.id_caixa || null,
+          id_empresa: this.usuario.id_empresa
         };
   
         console.log('Subvenda que vai ser enviada:', subvenda);
@@ -237,9 +238,9 @@ export default class DashboardComponent implements OnInit {
       });
     }
   
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
   }
   
   

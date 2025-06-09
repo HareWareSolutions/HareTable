@@ -995,7 +995,6 @@ app.post('/api/vendas', (req, res) => {
       return res.status(500).json({ error: 'Erro ao buscar caixa aberto' });
     }
 
-
     if (result.length === 0) {
       return res.status(400).json({ error: 'Nenhum caixa aberto no momento' });
     }
@@ -1020,26 +1019,33 @@ app.post('/api/vendas', (req, res) => {
 });
 
 
-// Rota GET para listar todas as vendas do caixa aberto
+// Rota GET para listar todas as vendas de caixa aberto por empresa
 app.get('/api/vendas', (req, res) => {
-  // Primeiro, buscar o ID do caixa que está aberto
-  db.query('SELECT id_caixa,id_empresa FROM caixa WHERE status = "ABERTO" ORDER BY id_caixa DESC LIMIT 1', (err, result) => {
+  const id_empresa = req.query.id_empresa;
+
+  if (!id_empresa) {
+    return res.status(400).json({ error: 'Parâmetro id_empresa é obrigatório' });
+  }
+
+  // Buscar o caixa aberto da empresa específica
+  const queryCaixa = 'SELECT id_caixa FROM caixa WHERE status = "ABERTO" AND id_empresa = ? ORDER BY id_caixa DESC LIMIT 1';
+
+  db.query(queryCaixa, [id_empresa], (err, result) => {
     if (err) {
       console.error('Erro ao buscar caixa aberto:', err);
       return res.status(500).json({ error: 'Erro ao buscar caixa aberto' });
     }
 
     if (result.length === 0) {
-      return res.status(400).json({ error: 'Nenhum caixa aberto no momento' });
+      return res.status(400).json({ error: 'Nenhum caixa aberto no momento para esta empresa' });
     }
 
     const id_caixa = result[0].id_caixa;
-    const id_empresa = result[0].id_empresa;
 
     // Buscar as vendas que pertencem a esse caixa
-    const query = 'SELECT * FROM vendas WHERE id_caixa = ? AND status_venda !="CANCELADA" and id_empresa = ? ORDER BY id_venda DESC';
+    const queryVendas = 'SELECT * FROM vendas WHERE id_caixa = ? AND id_empresa = ? AND status_venda != "CANCELADA" ORDER BY id_venda DESC';
 
-    db.query(query, [id_caixa,id_empresa], (err, results) => {
+    db.query(queryVendas, [id_caixa, id_empresa], (err, results) => {
       if (err) {
         console.error('Erro ao listar vendas:', err);
         return res.status(500).json({ error: 'Erro ao listar vendas' });
@@ -1049,6 +1055,7 @@ app.get('/api/vendas', (req, res) => {
     });
   });
 });
+
 
 
 // Rota PUT para atualizar uma venda
