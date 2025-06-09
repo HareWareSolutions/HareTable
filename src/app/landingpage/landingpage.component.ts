@@ -66,7 +66,7 @@ export class LandingpageComponent implements OnInit {
       (response: Produto[]) => {
         this[destino] = response.map(produto => ({
           ...produto,
-          imagemUrl: produto.imagem ? `http://localhost:5000${produto.imagem}` : ''
+          imagemUrl: produto.imagem ? `https://haretable.com.br${produto.imagem}` : ''
         }));
       },
       (error) => {
