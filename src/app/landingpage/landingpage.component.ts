@@ -163,12 +163,11 @@ export class LandingpageComponent implements OnInit {
       this.pixService.gerarPagamentoPix(dadosPix).subscribe({
         next: (res) => {
           console.log('PIX gerado:', res);
-            const link = document.createElement('a');
-            link.href = res.ticket_url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer'; // Segurança contra tabnabbing
-            link.click();
-
+          const link = document.createElement('a');
+          link.href = res.ticket_url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer'; // Segurança contra tabnabbing
+          link.click();
 
           this.iniciarVerificacaoStatus(res.id, novaMesa, dataHoraPedido); // ✅ passa os dados aqui
         },
@@ -277,9 +276,9 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
 
 
   calcularTotalCarrinho(): number {
-    const taxa_entrega = 10;
+
     return this.carrinho.reduce((total, item) => {
-      return total + (parseFloat(item.preco) * item.quantidade);
+      return total+(parseFloat(item.preco) * item.quantidade);
     }, 0);
   }
 
