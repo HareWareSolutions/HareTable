@@ -279,7 +279,7 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
   calcularTotalCarrinho(): number {
     const taxa_entrega = 10;
     return this.carrinho.reduce((total, item) => {
-      return total + taxa_entrega + (parseFloat(item.preco) * item.quantidade);
+      return total + (parseFloat(item.preco) * item.quantidade);
     }, 0);
   }
 
