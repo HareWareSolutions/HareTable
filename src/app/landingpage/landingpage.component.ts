@@ -163,7 +163,12 @@ export class LandingpageComponent implements OnInit {
       this.pixService.gerarPagamentoPix(dadosPix).subscribe({
         next: (res) => {
           console.log('PIX gerado:', res);
-          window.open(res.ticket_url, '_blank');
+            const link = document.createElement('a');
+            link.href = res.ticket_url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer'; // Segurança contra tabnabbing
+            link.click();
+
 
           this.iniciarVerificacaoStatus(res.id, novaMesa, dataHoraPedido); // ✅ passa os dados aqui
         },
@@ -210,9 +215,9 @@ export class LandingpageComponent implements OnInit {
 
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
 
   }
 
