@@ -21,7 +21,7 @@ export class LandingpageComponent implements OnInit {
   contra: Produto[] = [];
   doce: Produto[] = [];
 
-  taxa_entrega: 10.00;
+  taxa_entrega: number = 10.00;
 
   erro: string = '';
 
@@ -285,11 +285,17 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
 }
 
 
-  calcularTotalCarrinho(): number {
-   
-    return this.carrinho.reduce((total, item) => {
-      return total+this.taxa_entrega+(parseFloat(item.preco) * item.quantidade);
-    }, 0);
+calcularTotalCarrinho(): number {
+  const subtotal = this.carrinho.reduce((total, item) => {
+    return total + (parseFloat(item.preco) * item.quantidade);
+  }, 0);
+
+  // Só adiciona a taxa se for entrega (e não retirada)
+  if (this.dadosCliente.tipoEntrega === 'Entrega') {
+    return subtotal + this.taxa_entrega;
   }
+
+  return subtotal;
+}
 
 }
