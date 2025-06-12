@@ -19,6 +19,7 @@ export class LandingpageComponent implements OnInit {
   dogs: Produto[] = [];
   frango: Produto[] = [];
   contra: Produto[] = [];
+  doce: Produto[] = [];
 
   taxa_entrega: 10.00;
 
@@ -65,9 +66,12 @@ export class LandingpageComponent implements OnInit {
     this.carregarPorCategoria('lanche', 'lanches');
     this.carregarPorCategoria('bebidas', 'bebidas');
     this.carregarPorCategoria('dogs', 'dogs');
+    this.carregarPorCategoria('contra', 'contra');
+    this.carregarPorCategoria('frango', 'frango');
+    this.carregarPorCategoria('doce', 'doce');
   }
 
-  private carregarPorCategoria(categoria: string, destino: 'lanches' | 'bebidas' | 'dogs' | 'frango' | 'contra'): void {
+  private carregarPorCategoria(categoria: string, destino: 'lanches' | 'bebidas' | 'dogs' | 'frango' | 'contra' | 'doce'): void {
     this.produtoService.getProdutosPorCategoria(categoria).subscribe(
       (response: Produto[]) => {
         this[destino] = response.map(produto => ({
