@@ -13,9 +13,15 @@ import { interval, takeWhile, switchMap } from 'rxjs';
   styleUrls: ['./landingpage.component.scss']
 })
 export class LandingpageComponent implements OnInit {
+  
   lanches: Produto[] = [];
   bebidas: Produto[] = [];
   dogs: Produto[] = [];
+  frango: Produto[] = [];
+  contra: Produto[] = [];
+
+  taxa_entrega: 10.00;
+
   erro: string = '';
 
   dadosCliente = {
@@ -61,7 +67,7 @@ export class LandingpageComponent implements OnInit {
     this.carregarPorCategoria('dogs', 'dogs');
   }
 
-  private carregarPorCategoria(categoria: string, destino: 'lanches' | 'bebidas' | 'dogs'): void {
+  private carregarPorCategoria(categoria: string, destino: 'lanches' | 'bebidas' | 'dogs' | 'frango' | 'contra'): void {
     this.produtoService.getProdutosPorCategoria(categoria).subscribe(
       (response: Produto[]) => {
         this[destino] = response.map(produto => ({
@@ -157,7 +163,7 @@ export class LandingpageComponent implements OnInit {
       const dadosPix = {
         transaction_amount: valorpedido,
         description:'pagamento via pix',
-        payer_email: 'caramelodogburguer@gmail.com',
+        payer_email: 'ramirezstwart@gmail.com',
       };
           
       this.pixService.gerarPagamentoPix(dadosPix).subscribe({
@@ -214,9 +220,9 @@ export class LandingpageComponent implements OnInit {
 
     }
 
-    // setTimeout(() => {
-    //   window.location.reload();
-    // }, 800);
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
 
   }
 
@@ -276,9 +282,9 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
 
 
   calcularTotalCarrinho(): number {
-
+   
     return this.carrinho.reduce((total, item) => {
-      return total+(parseFloat(item.preco) * item.quantidade);
+      return total+this.taxa_entrega+(parseFloat(item.preco) * item.quantidade);
     }, 0);
   }
 
