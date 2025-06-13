@@ -222,9 +222,9 @@ export class LandingpageComponent implements OnInit {
 
     }
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 800);
 
   }
 
