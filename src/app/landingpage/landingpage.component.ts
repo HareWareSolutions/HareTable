@@ -154,7 +154,7 @@ export class LandingpageComponent implements OnInit {
       ordem_type: 'Pedido',
       capacidade: 1,
       endereco: this.dadosCliente.endereco || '',
-      id_empresa: 1,
+      id_empresa: 2,
       troco:this.dadosCliente.troco || 0,
       telefone:this.dadosCliente.telefone || '',
       totalConsumo: this.calcularTotalCarrinho()
@@ -205,7 +205,7 @@ export class LandingpageComponent implements OnInit {
               observacao: this.dadosCliente.observacao || '',
               data_hora: dataHoraPedido,
               status: 'Solicitado',
-              id_empresa: 1
+              id_empresa: 2
             }));
 
             this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
@@ -260,7 +260,7 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
               observacao: this.dadosCliente.observacao || '',
               data_hora: dataHoraPedido,
               status: 'Solicitado',
-              id_empresa: 1
+              id_empresa: 2
             }));
 
             this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
