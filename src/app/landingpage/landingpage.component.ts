@@ -23,6 +23,8 @@ export class LandingpageComponent implements OnInit {
 
   taxa_entrega: number = 10.00;
 
+  pixLinkGerado: string | null = null;
+
   erro: string = '';
 
   dadosCliente = {
@@ -173,11 +175,7 @@ export class LandingpageComponent implements OnInit {
       this.pixService.gerarPagamentoPix(dadosPix).subscribe({
         next: (res) => {
           console.log('PIX gerado:', res);
-          const link = document.createElement('a');
-          link.href = res.ticket_url;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer'; // Segurança contra tabnabbing
-          link.click();
+          this.pixLinkGerado = res.ticket_url; // ✅ salva o link para exibir no HTML
 
           this.iniciarVerificacaoStatus(res.id, novaMesa, dataHoraPedido); // ✅ passa os dados aqui
         },
