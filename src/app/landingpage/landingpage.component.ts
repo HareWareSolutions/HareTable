@@ -209,6 +209,9 @@ export class LandingpageComponent implements OnInit {
             this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
               this.toastr.success('Pedidos enviados com sucesso!');
               this.carrinho = [];
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 800);
             }, err => {
               console.error('Erro ao enviar pedidos:', err);
               this.toastr.error('Erro ao enviar pedidos.');
@@ -221,10 +224,6 @@ export class LandingpageComponent implements OnInit {
         });
 
     }
-
-    // setTimeout(() => {
-    //   window.location.reload();
-    // }, 800);
 
   }
 
@@ -264,6 +263,13 @@ iniciarVerificacaoStatus(id: string, novaMesa: any, dataHoraPedido: string): voi
             this.pedidoService.addPedidosEmLote(pedidosEmLote).subscribe(() => {
               this.toastr.success('Pedidos enviados com sucesso!');
               this.carrinho = [];
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 800);
+
+
+
             }, err => {
               console.error('Erro ao enviar pedidos:', err);
               this.toastr.error('Erro ao enviar pedidos.');
